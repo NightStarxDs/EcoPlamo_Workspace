@@ -2,31 +2,63 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Laravel\Sanctum\HasApiTokens; 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    // Wajib ada HasApiTokens untuk komunikasi dengan Flutter
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    // Menyesuaikan dengan custom ID di database
+    protected $primaryKey = 'id_pengguna';
+
+    // Daftar kolom yang diizinkan untuk diisi
+    protected $fillable = [
+        'nama_lengkap',
+        'no_whatsapp',
+        'password',
+        'role',
+    ];
+
+    // Menyembunyikan data sensitif saat diambil melalui API
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'whatsapp_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Memberi tahu sistem Auth Laravel untuk menggunakan no_whatsapp
+     * alih-alih email standar saat proses otentikasi.
+     */
+    public function username()
+    {
+        return 'no_whatsapp';
+    }
+
+
+    public function warga()
+    {
+        return $this->hasOne(Warga::class, 'id_pengguna', 'id_pengguna');
+    }
+
+    public function pengurus()
+    {
+        return $this->hasOne(Pengurus::class, 'id_pengguna', 'id_pengguna');
+    }
+
+    public function dlh()
+    {
+        return $this->hasOne(Dlh::class, 'id_pengguna', 'id_pengguna');
     }
 }
