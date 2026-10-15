@@ -3,12 +3,73 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Warga;     
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;       
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+        /**
+     * Registrasi akun warga dari aplikasi Flutter (FR-01).
+     * POST /api/register
+     */
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nama_lengkap' => 'required|string|max:100',
+            'no_whatsapp' => ['required', 'regex:/^08[0-9]{8,11}$/', 'unique:users,no_whatsapp'],
+            'alamat' => 'required|string|max:255',
+            'password' => 'required|string|min:8',
+        ], [
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+            'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi.',
+            'no_whatsapp.regex' => 'Nomor WhatsApp harus diawali 08 dan berisi 10-13 digit.',
+            'no_whatsapp.unique' => 'Nomor WhatsApp sudah digunakan.',
+            'alamat.required' => 'Blok & nomor rumah wajib diisi.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min' => 'Kata sandi minimal 8 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // Simpan ke tabel users dan warga sekaligus.
+        // Jika salah satu gagal, keduanya dibatalkan.
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'nama_lengkap' => $request->nama_lengkap,
+                'no_whatsapp' => $request->no_whatsapp,
+                'password' => $request->password, // otomatis di-hash (casts di model User)
+                'role' => 'warga', // registrasi mandiri selalu sebagai warga
+            ]);
+
+            Warga::create([
+                'id_pengguna' => $user->id_pengguna,
+                'alamat' => $request->alamat,
+            ]);
+
+            return $user;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pendaftaran berhasil. Silakan masuk.',
+            'data' => [
+                'id_pengguna' => $user->id_pengguna,
+                'nama_lengkap' => $user->nama_lengkap,
+                'no_whatsapp' => $user->no_whatsapp,
+                'role' => $user->role,
+            ],
+        ], 201);
+    }
+    
     /**
      * Handle login request from Flutter app.
      */

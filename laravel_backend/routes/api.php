@@ -11,6 +11,7 @@ Route::get('/tes-koneksi', function () {
 });
 
 // Authentication routes
+Route::post('/register', [AuthController::class, 'register']); // ← BARU
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
