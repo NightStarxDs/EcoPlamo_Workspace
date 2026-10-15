@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id('id_dlh');
             $table->unsignedBigInteger('id_pengguna');
             
-            // Atribut spesifik sesuai ERD
             $table->string('nip_pegawai')->unique();
             
             $table->timestamps();
