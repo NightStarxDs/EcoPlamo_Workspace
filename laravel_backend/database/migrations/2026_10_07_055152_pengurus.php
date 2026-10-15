@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('pengurus', function (Blueprint $table) {
+        Schema::create('pengurus_rtrw', function (Blueprint $table) {
             $table->id('id_pengurus');
-            $table->unsignedBigInteger('id_pengguna');
+               $table->unsignedBigInteger('id_pengguna')->unique();
             
             // Atribut spesifik sesuai ERD
             $table->string('jabatan');
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('pengurus');
+        Schema::dropIfExists('pengurus_rtrw');
     }
 };

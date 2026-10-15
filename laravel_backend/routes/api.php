@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\KatalogController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/tes-koneksi', function () {
@@ -11,7 +12,11 @@ Route::get('/tes-koneksi', function () {
 });
 
 // Authentication routes
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Katalog harga sampah
+Route::get('/katalog', [KatalogController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);

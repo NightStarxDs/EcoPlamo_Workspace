@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('warga', function (Blueprint $table) {
             $table->id('id_warga');
-            $table->unsignedBigInteger('id_pengguna');
+            $table->unsignedBigInteger('id_pengguna')->unique();
             
             // Atribut spesifik sesuai ERD
             $table->text('alamat')->nullable();

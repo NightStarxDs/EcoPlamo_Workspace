@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/register.dart';
+import 'screens/katalog/katalog_screen.dart';
 import 'screens/warga/warga_dashboard.dart';
 import 'screens/tes_koneksi.dart';
 import 'screens/splash_screen.dart';
@@ -30,6 +31,7 @@ class EcoPlamoApp extends StatelessWidget {
         '/home': (context) => const WargaDashboard(),
         '/warga-dashboard': (context) => const WargaDashboard(),
         '/tes-koneksi': (context) => const TesKoneksiScreen(),
+        '/katalog': (context) => const KatalogScreen(), // ← BARU
       },
     );
   }
