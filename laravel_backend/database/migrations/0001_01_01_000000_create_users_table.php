@@ -12,20 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id('id_pengguna'); // Biarkan bawaan Laravel
+            $table->id('id_pengguna');
 
-            // Ganti 'name' menjadi 'nama' agar sesuai ERD
             $table->string('nama_lengkap'); 
             
-            // Ganti 'email' menjadi 'no_whatsapp'
             $table->string('no_whatsapp')->unique(); 
             
-            // Ganti 'email_verified_at' menjadi verifikasi whatsapp (opsional jika pakai OTP)
             $table->timestamp('whatsapp_verified_at')->nullable(); 
             
             $table->string('password');
             
-            // TAMBAHAN WAJIB: Kolom role dari ERD
             $table->enum('role', ['warga', 'pengurus', 'dlh'])->default('warga');
             
             $table->rememberToken();

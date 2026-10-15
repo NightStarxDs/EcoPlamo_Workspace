@@ -1,30 +1,65 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:pg_ecowaste/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('EcoPlamo App responsiveness test - Normal Mobile', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pumpWidget(const EcoPlamoApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Eco Plamo'), findsWidgets);
+    expect(find.text('Masuk'), findsWidgets);
+    expect(find.text('Username / Nomor Whatsapp'), findsOneWidget);
+  });
+
+
+  testWidgets('EcoPlamo App responsiveness test - Tablet / Desktop', (tester) async {
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const EcoPlamoApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Eco Plamo'), findsWidgets);
+    expect(find.text('Masuk'), findsWidgets);
+    expect(find.text('Eco Plamo v1.0'), findsOneWidget);
+  });
+
+  testWidgets('EcoPlamo App responsiveness test - Small Phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const EcoPlamoApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Eco Plamo'), findsWidgets);
+    expect(find.text('Masuk'), findsWidgets);
+  });
+
+  testWidgets('EcoPlamo App responsiveness test - Landscape Mobile', (tester) async {
+    tester.view.physicalSize = const Size(800, 400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const EcoPlamoApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Eco Plamo'), findsWidgets);
+    expect(find.text('Masuk'), findsWidgets);
   });
 }

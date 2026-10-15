@@ -1,22 +1,36 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'home.dart';
+import 'screens/auth/login.dart';
+import 'screens/auth/register.dart';
+import 'screens/warga/warga_dashboard.dart';
+import 'screens/tes_koneksi.dart';
+import 'screens/splash_screen.dart';
+import 'theme/app_theme.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  runApp(const EcoPlamoApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class EcoPlamoApp extends StatelessWidget {
+  const EcoPlamoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Eco Plamo',
       debugShowCheckedModeBanner: false,
-      title: 'EcoPlamo: Circular Economy',
-      theme: ThemeData(primarySwatch: Colors.indigo, fontFamily: 'Roboto'),
-      home: const HomePage(), // Memanggil HomePage dari home.dart
+      theme: AppTheme.lightTheme,
+      initialRoute: '/splash',
+      routes: {
+        '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const Login(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const WargaDashboard(),
+        '/warga-dashboard': (context) => const WargaDashboard(),
+        '/tes-koneksi': (context) => const TesKoneksiScreen(),
+      },
     );
   }
 }
