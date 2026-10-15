@@ -13,9 +13,9 @@ class Warga extends Model
     protected $table = 'warga';
 
     // Beri tahu Laravel nama Primary Key-nya
-    protected $primaryKey = 'id_warga';
-
-    // Kolom yang boleh diisi
+    protected $primaryKey = 'id_pengguna';
+    public $incrementing = false;
+    public $timestamps = false;
     protected $fillable = [
         'id_pengguna',
         'alamat',

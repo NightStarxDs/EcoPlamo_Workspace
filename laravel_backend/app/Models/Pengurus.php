@@ -9,8 +9,10 @@ class Pengurus extends Model
 {
     use HasFactory;
 
-    protected $table = 'pengurus';
-    protected $primaryKey = 'id_pengurus';
+    protected $table = 'pengurus_rtrw';
+    protected $primaryKey = 'id_pengguna';
+    public $incrementing = false;
+    public $timestamps = false;
 
     protected $fillable = [
         'id_pengguna',

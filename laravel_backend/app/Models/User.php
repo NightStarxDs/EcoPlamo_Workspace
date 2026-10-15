@@ -46,7 +46,6 @@ class User extends Authenticatable
         return 'no_whatsapp';
     }
 
-
     public function warga()
     {
         return $this->hasOne(Warga::class, 'id_pengguna', 'id_pengguna');
