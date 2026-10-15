@@ -219,6 +219,10 @@ class _WargaDashboardState extends State<WargaDashboard>
           currentIndex: _currentNavIndex,
           onTap: (index) {
             HapticFeedback.selectionClick();
+            if (index == 1) {
+              Navigator.pushNamed(context, '/katalog');
+              return;
+            }
             setState(() => _currentNavIndex = index);
           },
         ),
