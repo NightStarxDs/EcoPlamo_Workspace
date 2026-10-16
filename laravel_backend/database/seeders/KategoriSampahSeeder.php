@@ -9,13 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Data awal katalog harga sampah.
- * Jalankan: php artisan db:seed --class=KategoriSampahSeeder
  */
 class KategoriSampahSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Pastikan ada akun pengurus sebagai pemilik data katalog
+        //Pastikan ada akun pengurus sebagai pemilik data katalog
         $pengurus = User::firstOrCreate(
             ['no_whatsapp' => '082222222222'],
             [
@@ -25,21 +24,22 @@ class KategoriSampahSeeder extends Seeder
             ]
         );
 
-        // 2. Pastikan pengurus tersebut juga ada di tabel pengurus_rtrw
+        //Pastikan pengurus tersebut juga ada di tabel pengurus_rtrw
         DB::table('pengurus_rtrw')->updateOrInsert(
             ['id_pengguna' => $pengurus->id_pengguna],
             ['jabatan' => 'Ketua Posko', 'created_at' => now(), 'updated_at' => now()]
         );
 
-        // 3. Data katalog awal (sesuai desain Figma)
+        //Data katalog awal (sesuai desain Figma)
+        //Gambar disimpan di: storage/app/public/katalog/
         $katalog = [
-            ['Botol Plastik PET', 'Bersih, kosong, dan dikempeskan', 2500, 'Kg', 'Botol'],
-            ['Kardus & Kertas Bekas', 'Kering dan diikat rapi', 1500, 'Kg', 'Kardus'],
-            ['Minyak Jelantah', 'Disaring, tanpa ampas makanan', 4000, 'Liter', 'Minyak'],
-            ['Besi & Kaleng', 'Bebas karat berlebih', 3000, 'Kg', 'Logam'],
+            ['Botol Plastik PET', 'Bersih, kosong, dan dikempeskan', 2500, 'Kg', 'Botol', 'katalog/botol.jpg'],
+            ['Kardus & Kertas Bekas', 'Kering dan diikat rapi', 1500, 'Kg', 'Kardus', 'katalog/kardus.jpg'],
+            ['Minyak Jelantah', 'Disaring, tanpa ampas makanan', 4000, 'Liter', 'Minyak', 'katalog/minyak.jpg'],
+            ['Besi & Kaleng', 'Bebas karat berlebih', 3000, 'Kg', 'Logam', 'katalog/logam.jpg'],
         ];
 
-        foreach ($katalog as [$nama, $deskripsi, $harga, $satuan, $jenis]) {
+        foreach ($katalog as [$nama, $deskripsi, $harga, $satuan, $jenis, $gambar]) {
             KategoriSampah::updateOrCreate(
                 ['nama_kategori' => $nama],
                 [
@@ -48,6 +48,7 @@ class KategoriSampahSeeder extends Seeder
                     'harga_per_kg' => $harga,
                     'satuan' => $satuan,
                     'jenis' => $jenis,
+                    'gambar' => $gambar,
                     'status' => 'aktif',
                 ]
             );
