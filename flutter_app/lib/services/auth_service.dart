@@ -148,66 +148,6 @@ class AuthService {
       return {'success': false, 'message': 'Terjadi kesalahan koneksi: $e'};
     }
   }
-  /// Fungsi Registrasi akun warga ke backend Laravel (FR-01)
-  Future<Map<String, dynamic>> register({
-    required String namaLengkap,
-    required String noWhatsapp,
-    required String alamat,
-    required String password,
-  }) async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/register');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({
-              'nama_lengkap': namaLengkap.trim(),
-              'no_whatsapp': noWhatsapp.trim(),
-              'alamat': alamat.trim(),
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'] ?? 'Pendaftaran berhasil. Silakan masuk.',
-        };
-      }
-
-      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
-      return {
-        'success': false,
-        'message': data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
-        'statusCode': response.statusCode,
-      };
-    } on SocketException catch (_) {
-      return {
-        'success': false,
-        'message':
-            'Tidak dapat menghubungi server Laravel. Pastikan backend berjalan ("php artisan serve").',
-      };
-    } on http.ClientException catch (e) {
-      return {
-        'success': false,
-        'message': 'Koneksi jaringan gagal: ${e.message}',
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan: $e',
-      };
-    }
-  }
 
   /// Fungsi Login ke backend Laravel
   Future<Map<String, dynamic>> login({
@@ -799,11 +739,12 @@ class AuthService {
   }) async {
     try {
       final token = await getToken();
-      if (token == null)
+      if (token == null) {
         return {
           'success': false,
           'message': 'Sesi habis, silakan login ulang.',
         };
+      }
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/pengurus/setoran');
 
@@ -871,11 +812,12 @@ class AuthService {
   }) async {
     try {
       final token = await getToken();
-      if (token == null)
+      if (token == null) {
         return {
           'success': false,
           'message': 'Sesi habis, silakan login ulang.',
         };
+      }
       final baseUrl = await getBaseUrl();
       final url = Uri.parse(
         '$baseUrl/pengurus/pencairan/$idPencairan/validasi',
@@ -909,11 +851,12 @@ class AuthService {
   }) async {
     try {
       final token = await getToken();
-      if (token == null)
+      if (token == null) {
         return {
           'success': false,
           'message': 'Sesi habis, silakan login ulang.',
         };
+      }
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/warga/pencairan');
 
@@ -945,8 +888,9 @@ class AuthService {
   Future<Map<String, dynamic>> getMutasiSaldoWarga() async {
     try {
       final token = await getToken();
-      if (token == null)
+      if (token == null) {
         return {'success': false, 'data': <Map<String, dynamic>>[]};
+      }
       final baseUrl = await getBaseUrl();
       final url = Uri.parse('$baseUrl/warga/mutasi');
 

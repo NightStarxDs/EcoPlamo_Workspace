@@ -15,11 +15,8 @@ class Warga extends Model
     // Beri tahu Laravel nama Primary Key-nya
     protected $primaryKey = 'id_pengguna';
     public $incrementing = false;
-<<<<<<< Updated upstream
-    public $timestamps = false;
-=======
     public $timestamps = true;
->>>>>>> Stashed changes
+
     protected $fillable = [
         'id_pengguna',
         'alamat',

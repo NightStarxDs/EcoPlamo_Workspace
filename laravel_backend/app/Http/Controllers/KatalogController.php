@@ -3,24 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\KategoriSampah;
-<<<<<<< Updated upstream
-=======
 use Illuminate\Http\Request;
->>>>>>> Stashed changes
 use Illuminate\Support\Facades\Storage;
 
 class KatalogController extends Controller
 {
     /**
-<<<<<<< Updated upstream
-     * Daftar katalog harga sampah yang aktif.
-     * GET /api/katalog
-     */
-    public function index()
-    {
-        $items = KategoriSampah::where('status', 'aktif')
-            ->orderBy('nama_kategori')
-=======
      * Daftar katalog harga sampah.
      * GET /api/katalog?all=1
      */
@@ -35,25 +23,16 @@ class KatalogController extends Controller
 
         $items = $query->orderBy('status', 'asc') // aktif di atas
             ->orderBy('nama_kategori', 'asc')
->>>>>>> Stashed changes
             ->get()
             ->map(function (KategoriSampah $item) {
                 return [
                     'id_kategori' => $item->id_kategori,
                     'nama' => $item->nama_kategori,
-<<<<<<< Updated upstream
-                    'deskripsi' => $item->deskripsi,
-                    'harga' => (float) $item->harga_per_kg,
-                    'satuan' => $item->satuan,
-                    'jenis' => $item->jenis,
-                    // null jika belum ada gambar; Flutter akan menampilkan placeholder
-=======
                     'deskripsi' => $item->deskripsi ?? '',
                     'harga' => (float) $item->harga_per_kg,
                     'satuan' => $item->satuan ?? 'kg',
                     'jenis' => $item->jenis ?? 'Anorganik',
                     'status' => $item->status ?? 'aktif',
->>>>>>> Stashed changes
                     'gambar_url' => $item->gambar ? url(Storage::url($item->gambar)) : null,
                 ];
             });
@@ -63,8 +42,6 @@ class KatalogController extends Controller
             'data' => $items,
         ]);
     }
-<<<<<<< Updated upstream
-=======
 
     /**
      * Tambah kategori sampah baru (Pengurus)
@@ -202,5 +179,4 @@ class KatalogController extends Controller
             'message' => 'Kategori sampah berhasil dihapus.',
         ]);
     }
->>>>>>> Stashed changes
 }

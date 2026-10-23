@@ -7,7 +7,6 @@ import 'screens/pengurus/pengurus_dashboard.dart';
 import 'screens/dlh/dlh_dashboard.dart';
 import 'screens/info/info_screen.dart';
 import 'screens/profile/profile_screen.dart';
-import 'screens/katalog/katalog_screen.dart';
 import 'screens/tes_koneksi.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
@@ -38,13 +37,9 @@ class EcoPlamoApp extends StatelessWidget {
         '/dlh-dashboard': (context) => const DlhDashboard(),
         '/home': (context) => const WargaDashboard(), // Fallback for legacy
         '/tes-koneksi': (context) => const TesKoneksiScreen(),
-<<<<<<< Updated upstream
-        '/katalog': (context) => const KatalogScreen(), // ← BARU
-=======
         '/katalog': (context) => const KatalogScreen(),
         '/info': (context) => const InfoScreen(),
         '/profile': (context) => const ProfileScreen(),
->>>>>>> Stashed changes
       },
     );
   }

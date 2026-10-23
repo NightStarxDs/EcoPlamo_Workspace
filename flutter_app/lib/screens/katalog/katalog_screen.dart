@@ -1,33 +1,21 @@
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
-import '../../models/katalog_item.dart';
-=======
 import 'package:flutter/services.dart';
 import '../../models/katalog_item.dart';
 import '../../services/auth_service.dart';
->>>>>>> Stashed changes
 import '../../services/katalog_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_bottom_nav.dart';
 import '../../widgets/eco_logo.dart';
-<<<<<<< Updated upstream
-=======
 import '../../widgets/eco_scan_modal.dart';
 import '../pengurus/catat_setoran_screen.dart';
->>>>>>> Stashed changes
 
 /// Pilihan urutan di tombol filter.
 enum _Urutan { bawaan, termurah, termahal }
 
 /// Screen: Katalog Harga Sampah
-<<<<<<< Updated upstream
-/// - Data diambil dari API Laravel (GET /api/katalog).
-/// - Pencarian & filter kategori dilakukan lokal pada data yang sudah diterima.
-=======
 /// - Untuk Warga: Melihat daftar harga sampah aktif
 /// - Untuk Pengurus: Dilengkapi tombol aksi Tambah, Edit, Nonaktifkan/Aktifkan, dan Hapus
->>>>>>> Stashed changes
 class KatalogScreen extends StatefulWidget {
   const KatalogScreen({super.key});
 
@@ -37,19 +25,13 @@ class KatalogScreen extends StatefulWidget {
 
 class _KatalogScreenState extends State<KatalogScreen> {
   final _katalogService = KatalogService();
-<<<<<<< Updated upstream
-=======
   final _authService = AuthService();
->>>>>>> Stashed changes
   final _searchController = TextEditingController();
 
   List<KatalogItem> _items = [];
   bool _isLoading = true;
   String? _errorMessage;
-<<<<<<< Updated upstream
-=======
   bool _isPengurus = false;
->>>>>>> Stashed changes
 
   String _keyword = '';
   String _kategoriAktif = 'Semua';
@@ -61,11 +43,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
   @override
   void initState() {
     super.initState();
-<<<<<<< Updated upstream
-    _loadKatalog();
-=======
     _checkRoleAndLoad();
->>>>>>> Stashed changes
   }
 
   @override
@@ -76,8 +54,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   // ---------------- Data ----------------
 
-<<<<<<< Updated upstream
-=======
   Future<void> _checkRoleAndLoad() async {
     final isPengurus = await _authService.isPengurus();
     if (!mounted) return;
@@ -85,7 +61,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
     await _loadKatalog();
   }
 
->>>>>>> Stashed changes
   Future<void> _loadKatalog() async {
     setState(() {
       _isLoading = true;
@@ -93,11 +68,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
     });
 
     try {
-<<<<<<< Updated upstream
-      final items = await _katalogService.fetchKatalog();
-=======
       final items = await _katalogService.fetchKatalog(all: _isPengurus);
->>>>>>> Stashed changes
       if (!mounted) return;
       setState(() => _items = items);
     } catch (e) {
@@ -140,9 +111,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
     return hasil;
   }
 
-<<<<<<< Updated upstream
-  // ---------------- Aksi ----------------
-=======
   // ---------------- Aksi Pengurus (Tambah / Edit / Nonaktifkan / Hapus) ----------------
 
   void _tambahKategoriModal() {
@@ -396,34 +364,19 @@ class _KatalogScreenState extends State<KatalogScreen> {
   }
 
   // ---------------- Navigasi ----------------
->>>>>>> Stashed changes
 
   void _kembali() {
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
     } else {
-<<<<<<< Updated upstream
-      Navigator.pushReplacementNamed(context, '/warga-dashboard');
-=======
       Navigator.pushReplacementNamed(
         context,
         _isPengurus ? '/pengurus-dashboard' : '/warga-dashboard',
       );
->>>>>>> Stashed changes
     }
   }
 
   void _onNavTap(int index) {
-<<<<<<< Updated upstream
-    if (index == 1) return;
-    if (index == 0) {
-      _kembali();
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Halaman ini belum tersedia.')),
-    );
-=======
     HapticFeedback.selectionClick();
     if (index == 1) return;
     if (index == 0) {
@@ -442,7 +395,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
     } else if (index == 4) {
       Navigator.pushReplacementNamed(context, '/profile');
     }
->>>>>>> Stashed changes
   }
 
   void _bukaFilter() {
@@ -493,8 +445,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-<<<<<<< Updated upstream
-=======
       floatingActionButton: _isPengurus
           ? FloatingActionButton.extended(
               backgroundColor: AppColors.primary,
@@ -504,7 +454,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
               onPressed: _tambahKategoriModal,
             )
           : null,
->>>>>>> Stashed changes
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -544,8 +493,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
       bottomNavigationBar: EcoBottomNavBar(
         currentIndex: 1,
         onTap: _onNavTap,
-<<<<<<< Updated upstream
-=======
         onScanTap: () {
           if (_isPengurus) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
@@ -553,7 +500,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
             EcoScanModal.show(context);
           }
         },
->>>>>>> Stashed changes
       ),
     );
   }
@@ -568,25 +514,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
           const SizedBox(width: 10),
           Text('Eco Plamo', style: AppTypography.h2(color: AppColors.primary)),
           const Spacer(),
-<<<<<<< Updated upstream
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tidak ada notifikasi baru.')),
-              );
-            },
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.textPrimary,
-              size: 26,
-            ),
-          ),
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.person, color: AppColors.primary, size: 22),
-          ),
-=======
           if (_isPengurus)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -599,7 +526,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
                 style: AppTypography.caption(color: AppColors.primary).copyWith(fontWeight: FontWeight.w700),
               ),
             ),
->>>>>>> Stashed changes
         ],
       ),
     );
@@ -630,13 +556,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
               Text('Katalog Harga Sampah', style: AppTypography.h3()),
               const SizedBox(height: 2),
               Text(
-<<<<<<< Updated upstream
-                'Harga sampah sesuai dengan kondisi dan jenisnya',
-=======
                 _isPengurus
                     ? 'Kelola data harga sampah, tambah baru, edit, dan nonaktifkan'
                     : 'Harga sampah sesuai dengan kondisi dan jenisnya',
->>>>>>> Stashed changes
                 style: AppTypography.bodySmall(),
               ),
             ],
@@ -686,25 +608,11 @@ class _KatalogScreenState extends State<KatalogScreen> {
           color: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-<<<<<<< Updated upstream
-            side: BorderSide(
-              color: _urutan == _Urutan.bawaan
-                  ? AppColors.border
-                  : AppColors.primary,
-            ),
-=======
             side: const BorderSide(color: AppColors.border),
->>>>>>> Stashed changes
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: _bukaFilter,
-<<<<<<< Updated upstream
-            child: const SizedBox(
-              width: 48,
-              height: 48,
-              child: Icon(Icons.tune, color: AppColors.primary),
-=======
             child: SizedBox(
               width: 48,
               height: 48,
@@ -727,7 +635,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
                     ),
                 ],
               ),
->>>>>>> Stashed changes
             ),
           ),
         ),
@@ -737,48 +644,26 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   Widget _buildChipKategori() {
     final kategori = _daftarKategori;
-<<<<<<< Updated upstream
-
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-=======
     return SizedBox(
       height: 38,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
->>>>>>> Stashed changes
         itemCount: kategori.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final nama = kategori[index];
           final aktif = nama == _kategoriAktif;
-<<<<<<< Updated upstream
-
-          return GestureDetector(
-            onTap: () => setState(() => _kategoriAktif = nama),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-=======
           return InkWell(
             borderRadius: BorderRadius.circular(20),
             onTap: () => setState(() => _kategoriAktif = nama),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
->>>>>>> Stashed changes
               decoration: BoxDecoration(
                 color: aktif ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-<<<<<<< Updated upstream
-                  color: aktif ? AppColors.primary : AppColors.border,
-=======
                   color: aktif ? AppColors.primary : AppColors.borderLight,
->>>>>>> Stashed changes
                 ),
               ),
               child: Text(
@@ -808,13 +693,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-<<<<<<< Updated upstream
-              'Harga dapat berubah sesuai dengan kebijakan Pengurus dan Pihak Terkait.',
-=======
               _isPengurus
                   ? 'Pengurus dapat menambah, mengedit, menonaktifkan, atau menghapus kategori harga sampah.'
                   : 'Harga dapat berubah sesuai dengan kebijakan Pengurus dan Pihak Terkait.',
->>>>>>> Stashed changes
               style: AppTypography.bodySmall(color: AppColors.textPrimary),
             ),
           ),
@@ -860,11 +741,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                 ? 'Katalog masih kosong'
                 : 'Jenis sampah tidak ditemukan',
             keterangan: _items.isEmpty
-<<<<<<< Updated upstream
-                ? 'Belum ada data harga sampah dari pengurus.'
-=======
                 ? 'Belum ada data harga sampah.'
->>>>>>> Stashed changes
                 : 'Coba kata kunci atau kategori lain.',
           ),
         ),
@@ -873,11 +750,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
     return [
       SliverPadding(
-<<<<<<< Updated upstream
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-=======
         padding: EdgeInsets.fromLTRB(16, 0, 16, _isPengurus ? 84 : 24),
->>>>>>> Stashed changes
         sliver: SliverList.separated(
           itemCount: items.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -888,16 +761,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
   }
 
   Widget _buildKartu(KatalogItem item) {
-<<<<<<< Updated upstream
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-=======
     final isNonaktif = item.status == 'nonaktif';
 
     return Container(
@@ -911,44 +774,11 @@ class _KatalogScreenState extends State<KatalogScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
->>>>>>> Stashed changes
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-<<<<<<< Updated upstream
-      child: Row(
-        children: [
-          _buildGambar(item),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.nama,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.h3().copyWith(fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.deskripsi,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodySmall(),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.hargaLabel,
-                  style: AppTypography.bodyMedium(color: AppColors.primary)
-                      .copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          ),
-=======
       child: Column(
         children: [
           Row(
@@ -1049,7 +879,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
               ],
             ),
           ],
->>>>>>> Stashed changes
         ],
       ),
     );
@@ -1061,14 +890,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
       width: ukuran,
       height: ukuran,
       decoration: BoxDecoration(
-<<<<<<< Updated upstream
-        color: const Color(0xFFD9D9D9),
-        borderRadius: BorderRadius.circular(8),
-      ),
-    );
-
-    if (item.gambarUrl == null) return placeholder;
-=======
         color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -1078,7 +899,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
     if (item.gambarUrl == null || item.gambarUrl!.isEmpty) {
       return placeholder;
     }
->>>>>>> Stashed changes
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -1098,35 +918,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
     required String keterangan,
     bool tombolUlang = false,
   }) {
-<<<<<<< Updated upstream
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 48, color: AppColors.textHint),
-          const SizedBox(height: 8),
-          Text(judul, style: AppTypography.h3(), textAlign: TextAlign.center),
-          const SizedBox(height: 4),
-          Text(
-            keterangan,
-            style: AppTypography.bodySmall(),
-            textAlign: TextAlign.center,
-          ),
-          if (tombolUlang) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _loadKatalog,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Muat Ulang'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-              ),
-            ),
-          ],
-        ],
-=======
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1148,7 +939,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
             ],
           ],
         ),
->>>>>>> Stashed changes
       ),
     );
   }

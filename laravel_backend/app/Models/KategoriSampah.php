@@ -27,8 +27,6 @@ class KategoriSampah extends Model
             'harga_per_kg' => 'decimal:2',
         ];
     }
-<<<<<<< Updated upstream
-=======
 
     /**
      * Relationship: Kategori sampah dibuat oleh pengurus
@@ -45,5 +43,4 @@ class KategoriSampah extends Model
     {
         return $this->hasMany(DetailSetoran::class, 'id_kategori', 'id_kategori');
     }
->>>>>>> Stashed changes
 }
