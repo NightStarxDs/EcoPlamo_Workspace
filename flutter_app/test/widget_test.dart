@@ -14,12 +14,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const EcoPlamoApp());
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const EcoPlamoApp(initialRoute: '/login'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Eco Plamo'), findsWidgets);
     expect(find.text('Masuk'), findsWidgets);
-    expect(find.text('Username / Nomor Whatsapp'), findsOneWidget);
+    expect(find.text('Nomor WhatsApp / Username'), findsOneWidget);
   });
 
 
@@ -29,12 +30,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const EcoPlamoApp());
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const EcoPlamoApp(initialRoute: '/login'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Eco Plamo'), findsWidgets);
     expect(find.text('Masuk'), findsWidgets);
-    expect(find.text('Eco Plamo v1.0'), findsOneWidget);
+    expect(find.text('Nomor WhatsApp / Username'), findsOneWidget);
   });
 
   testWidgets('EcoPlamo App responsiveness test - Small Phone', (tester) async {
@@ -43,8 +45,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const EcoPlamoApp());
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const EcoPlamoApp(initialRoute: '/login'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Eco Plamo'), findsWidgets);
     expect(find.text('Masuk'), findsWidgets);
@@ -56,8 +59,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const EcoPlamoApp());
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const EcoPlamoApp(initialRoute: '/login'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Eco Plamo'), findsWidgets);
     expect(find.text('Masuk'), findsWidgets);

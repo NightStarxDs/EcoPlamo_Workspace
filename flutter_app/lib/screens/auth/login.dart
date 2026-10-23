@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
@@ -208,12 +209,23 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
       if (res['success'] == true) {
         HapticFeedback.mediumImpact();
 
+        // Arahkan ke dashboard berdasarkan role user
+        final role = res['user']['role'] as String? ?? 'warga';
+
+        // Jika user adalah Petugas DLH, sarankan membuka Web Dashboard
+        if (role == 'dlh') {
+          _showDlhWebRedirectDialog(Map<String, dynamic>.from(res['user']));
+          return;
+        }
+
         // Jalankan animasi Out sebelum masuk ke Dashboard
         await _playOutAnimation();
         if (!mounted) return;
 
-        // Arahkan ke dashboard warga
-        Navigator.pushReplacementNamed(context, '/warga-dashboard');
+        final dashboardRoute = role == 'pengurus'
+            ? '/pengurus-dashboard'
+            : '/warga-dashboard';
+        Navigator.pushReplacementNamed(context, dashboardRoute);
       } else {
         setState(() {
           _errorMessage = res['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
@@ -230,6 +242,148 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showDlhWebRedirectDialog(Map<String, dynamic> user) {
+    final dlhUrl = AuthService.getDlhWebUrl();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.desktop_windows_rounded,
+                color: Color(0xFF006D44),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Web Portal DLH',
+                style: AppTypography.h3(),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Halo, ${user['nama_lengkap'] ?? 'Petugas DLH'}!',
+              style: AppTypography.bodyLarge().copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Untuk kemudahan pengelolaan wilayah, data rekapitulasi, dan monitoring menyeluruh, dashboard Dinas Lingkungan Hidup (DLH) disediakan dalam versi Web.',
+              style: AppTypography.bodyMedium(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4F1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.link_rounded, size: 16, color: Color(0xFF006D44)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      dlhUrl,
+                      style: AppTypography.caption(color: const Color(0xFF006D44)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _playOutAnimation();
+                    if (!mounted) return;
+                    Navigator.pushReplacementNamed(context, '/dlh-dashboard');
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Versi Mobile',
+                    style: AppTypography.button(color: AppColors.textSecondary),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final uri = Uri.parse(dlhUrl);
+                    try {
+                      final canLaunch = await canLaunchUrl(uri);
+                      if (canLaunch) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else {
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text('Tidak dapat membuka browser. URL: $dlhUrl'),
+                            action: SnackBarAction(
+                              label: 'Salin URL',
+                              onPressed: () {
+                                // Copy URL to clipboard
+                              },
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (!ctx.mounted) return;
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: Pastikan Laragon web server berjalan'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_browser_rounded, size: 18),
+                  label: const Text('Buka Web'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF006D44),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override

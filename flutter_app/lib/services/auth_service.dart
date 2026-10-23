@@ -60,6 +60,26 @@ class AuthService {
     }
   }
 
+  /// Mendapatkan URL Web Dashboard DLH
+  static String getDlhWebUrl() {
+    // Use the same base URL as the API server for consistency
+    // This ensures the DLH web is accessible from the same server
+    String apiUrl = '';
+
+    if (kIsWeb) {
+      apiUrl = 'http://localhost:8000';
+    } else if (!kIsWeb && Platform.isAndroid) {
+      // 10.0.2.2 adalah localhost khusus untuk emulator Android
+      apiUrl = 'http://10.0.2.2:8000';
+    } else {
+      // Windows Desktop, iOS Simulator, macOS, Linux
+      apiUrl = 'http://127.0.0.1:8000';
+    }
+
+    // DLH web is now served from Laravel's public directory
+    return '$apiUrl/dlh_web/';
+  }
+
   /// Mendapatkan Base URL saat ini (bisa custom atau default)
   Future<String> getBaseUrl() async {
     final customUrl = await _getString(_keyBaseUrl);
@@ -129,65 +149,6 @@ class AuthService {
     }
   }
 
-  /// Fungsi Registrasi akun warga ke backend Laravel (FR-01)
-  Future<Map<String, dynamic>> register({
-    required String namaLengkap,
-    required String noWhatsapp,
-    required String alamat,
-    required String password,
-  }) async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/register');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({
-              'nama_lengkap': namaLengkap.trim(),
-              'no_whatsapp': noWhatsapp.trim(),
-              'alamat': alamat.trim(),
-              'password': password,
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'] ?? 'Pendaftaran berhasil. Silakan masuk.',
-        };
-      }
-
-      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
-      return {
-        'success': false,
-        'message':
-            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
-        'statusCode': response.statusCode,
-      };
-    } on SocketException catch (_) {
-      return {
-        'success': false,
-        'message':
-            'Tidak dapat menghubungi server Laravel. Pastikan backend berjalan ("php artisan serve").',
-      };
-    } on http.ClientException catch (e) {
-      return {
-        'success': false,
-        'message': 'Koneksi jaringan gagal: ${e.message}',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
-    }
-  }
-
   /// Fungsi Login ke backend Laravel
   Future<Map<String, dynamic>> login({
     required String noWhatsapp,
@@ -241,6 +202,86 @@ class AuthService {
           }
         }
 
+      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
+        'statusCode': response.statusCode,
+      };
+    } on SocketException catch (_) {
+      return {
+        'success': false,
+        'message':
+            'Tidak dapat menghubungi server Laravel. Pastikan backend berjalan ("php artisan serve") dan URL IP server benar.',
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Koneksi jaringan gagal: ${e.message}',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
+    }
+  }
+
+  /// Fungsi Register warga ke backend Laravel (Generalisasi Superclass User + Subclass Warga)
+  Future<Map<String, dynamic>> register({
+    required String namaLengkap,
+    required String noWhatsapp,
+    required String alamat,
+    required String password,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse('$baseUrl/register');
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'nama_lengkap': namaLengkap.trim(),
+              'no_whatsapp': noWhatsapp.trim(),
+              'alamat': alamat.trim(),
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          (data['success'] == true || data['data'] != null)) {
+        final token = data['data']['token'] as String;
+        final user = data['data']['user'] as Map<String, dynamic>;
+
+        // Simpan token dan data user dengan safe storage
+        await _setString(_keyToken, token);
+        await _setString(_keyUser, jsonEncode(user));
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Pendaftaran berhasil!',
+          'user': user,
+          'token': token,
+        };
+      } else {
+        String message =
+            data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
+        if (data['errors'] != null && data['errors'] is Map) {
+          final errors = data['errors'] as Map<String, dynamic>;
+          if (errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              message = firstError.first.toString();
+            }
+          }
+        }
+
         return {
           'success': false,
           'message': message,
@@ -268,12 +309,72 @@ class AuthService {
     final userString = await _getString(_keyUser);
     if (userString != null) {
       try {
-        return jsonDecode(userString) as Map<String, dynamic>;
+        final map = jsonDecode(userString) as Map<String, dynamic>;
+        // Pastikan key 'peran' dan 'role' selalu konsisten
+        final roleVal = (map['peran'] ?? map['role'])?.toString();
+        if (roleVal != null) {
+          map['peran'] = roleVal;
+          map['role'] = roleVal;
+        }
+        return map;
       } catch (_) {
         return null;
       }
     }
     return null;
+  }
+
+  /// Cek peran pengguna yang aktif (pengurus, dlh, warga)
+  Future<String> getUserRole() async {
+    final user = await getCurrentUser();
+    if (user == null) return 'warga';
+    final role = (user['peran'] ?? user['role'])?.toString().toLowerCase();
+    if (role == 'pengurus' ||
+        user['pengurus'] != null ||
+        (user['role_data'] != null && user['role_data']['jabatan'] != null)) {
+      return 'pengurus';
+    }
+    if (role == 'dlh' || user['dlh'] != null) {
+      return 'dlh';
+    }
+    return role ?? 'warga';
+  }
+
+  /// Cek apakah pengguna saat ini adalah pengurus
+  Future<bool> isPengurus() async {
+    return (await getUserRole()) == 'pengurus';
+  }
+
+  /// Segarkan profil dari GET /api/me
+  Future<Map<String, dynamic>?> refreshCurrentUser() async {
+    try {
+      final token = await getToken();
+      if (token == null) return getCurrentUser();
+
+      final baseUrl = await getBaseUrl();
+      final url = Uri.parse('$baseUrl/me');
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] is Map) {
+          final user = Map<String, dynamic>.from(data['data']);
+          await saveUser(user);
+          return user;
+        }
+      }
+      return getCurrentUser();
+    } catch (_) {
+      return getCurrentUser();
+    }
   }
 
   /// Ambil token otentikasi Sanctum

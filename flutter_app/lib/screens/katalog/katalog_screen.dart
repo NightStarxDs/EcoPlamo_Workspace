@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/katalog_item.dart';
 import '../../services/auth_service.dart';
 import '../../services/katalog_service.dart';
@@ -6,13 +7,15 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_bottom_nav.dart';
 import '../../widgets/eco_logo.dart';
+import '../../widgets/eco_scan_modal.dart';
+import '../pengurus/catat_setoran_screen.dart';
 
 /// Pilihan urutan di tombol filter.
 enum _Urutan { bawaan, termurah, termahal }
 
 /// Screen: Katalog Harga Sampah
-/// - Data diambil dari API Laravel (GET /api/katalog).
-/// - Pencarian & filter kategori dilakukan lokal pada data yang sudah diterima.
+/// - Untuk Warga: Melihat daftar harga sampah aktif
+/// - Untuk Pengurus: Dilengkapi tombol aksi Tambah, Edit, Nonaktifkan/Aktifkan, dan Hapus
 class KatalogScreen extends StatefulWidget {
   const KatalogScreen({super.key});
 
@@ -60,6 +63,13 @@ class _KatalogScreenState extends State<KatalogScreen> {
   }
 
   // ---------------- Data ----------------
+
+  Future<void> _checkRoleAndLoad() async {
+    final isPengurus = await _authService.isPengurus();
+    if (!mounted) return;
+    setState(() => _isPengurus = isPengurus);
+    await _loadKatalog();
+  }
 
   Future<void> _loadKatalog() async {
     setState(() {
@@ -408,19 +418,32 @@ class _KatalogScreenState extends State<KatalogScreen> {
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
     } else {
-      Navigator.pushReplacementNamed(context, '/warga-dashboard');
+      Navigator.pushReplacementNamed(
+        context,
+        _isPengurus ? '/pengurus-dashboard' : '/warga-dashboard',
+      );
     }
   }
 
   void _onNavTap(int index) {
+    HapticFeedback.selectionClick();
     if (index == 1) return;
     if (index == 0) {
-      _kembali();
-      return;
+      Navigator.pushReplacementNamed(
+        context,
+        _isPengurus ? '/pengurus-dashboard' : '/warga-dashboard',
+      );
+    } else if (index == 2) {
+      if (_isPengurus) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
+      } else {
+        EcoScanModal.show(context);
+      }
+    } else if (index == 3) {
+      Navigator.pushReplacementNamed(context, '/info');
+    } else if (index == 4) {
+      Navigator.pushReplacementNamed(context, '/profile');
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Halaman ini belum tersedia.')),
-    );
   }
 
   void _bukaFilter() {
@@ -471,6 +494,15 @@ class _KatalogScreenState extends State<KatalogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: _isPengurus
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Tambah Sampah'),
+              onPressed: _tambahKategoriModal,
+            )
+          : null,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -518,6 +550,13 @@ class _KatalogScreenState extends State<KatalogScreen> {
       bottomNavigationBar: EcoBottomNavBar(
         currentIndex: 1,
         onTap: _onNavTap,
+        onScanTap: () {
+          if (_isPengurus) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
+          } else {
+            EcoScanModal.show(context);
+          }
+        },
       ),
     );
   }
@@ -532,23 +571,18 @@ class _KatalogScreenState extends State<KatalogScreen> {
           const SizedBox(width: 10),
           Text('Eco Plamo', style: AppTypography.h2(color: AppColors.primary)),
           const Spacer(),
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tidak ada notifikasi baru.')),
-              );
-            },
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.textPrimary,
-              size: 26,
+          if (_isPengurus)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Mode Pengurus',
+                style: AppTypography.caption(color: AppColors.primary).copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
-          ),
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.person, color: AppColors.primary, size: 22),
-          ),
         ],
       ),
     );
@@ -579,7 +613,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
               Text('Katalog Harga Sampah', style: AppTypography.h3()),
               const SizedBox(height: 2),
               Text(
-                'Harga sampah sesuai dengan kondisi dan jenisnya',
+                _isPengurus
+                    ? 'Kelola data harga sampah, tambah baru, edit, dan nonaktifkan'
+                    : 'Harga sampah sesuai dengan kondisi dan jenisnya',
                 style: AppTypography.bodySmall(),
               ),
             ],
@@ -629,19 +665,33 @@ class _KatalogScreenState extends State<KatalogScreen> {
           color: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: _urutan == _Urutan.bawaan
-                  ? AppColors.border
-                  : AppColors.primary,
-            ),
+            side: const BorderSide(color: AppColors.border),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: _bukaFilter,
-            child: const SizedBox(
+            child: SizedBox(
               width: 48,
               height: 48,
-              child: Icon(Icons.tune, color: AppColors.primary),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.tune, color: AppColors.textPrimary),
+                  if (_urutan != _Urutan.bawaan)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -651,28 +701,26 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   Widget _buildChipKategori() {
     final kategori = _daftarKategori;
-
     return SizedBox(
-      height: 36,
+      height: 38,
       child: ListView.separated(
-        scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
         itemCount: kategori.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final nama = kategori[index];
           final aktif = nama == _kategoriAktif;
-
-          return GestureDetector(
+          return InkWell(
+            borderRadius: BorderRadius.circular(20),
             onTap: () => setState(() => _kategoriAktif = nama),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: aktif ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: aktif ? AppColors.primary : AppColors.border,
+                  color: aktif ? AppColors.primary : AppColors.borderLight,
                 ),
               ),
               child: Text(
@@ -702,7 +750,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Harga dapat berubah sesuai dengan kebijakan Pengurus dan Pihak Terkait.',
+              _isPengurus
+                  ? 'Pengurus dapat menambah, mengedit, menonaktifkan, atau menghapus kategori harga sampah.'
+                  : 'Harga dapat berubah sesuai dengan kebijakan Pengurus dan Pihak Terkait.',
               style: AppTypography.bodySmall(color: AppColors.textPrimary),
             ),
           ),
@@ -748,7 +798,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                 ? 'Katalog masih kosong'
                 : 'Jenis sampah tidak ditemukan',
             keterangan: _items.isEmpty
-                ? 'Belum ada data harga sampah dari pengurus.'
+                ? 'Belum ada data harga sampah.'
                 : 'Coba kata kunci atau kategori lain.',
           ),
         ),
@@ -757,7 +807,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
     return [
       SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, 0, 16, _isPengurus ? 84 : 24),
         sliver: SliverList.separated(
           itemCount: items.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -920,12 +970,15 @@ class _KatalogScreenState extends State<KatalogScreen> {
       width: ukuran,
       height: ukuran,
       decoration: BoxDecoration(
-        color: const Color(0xFFD9D9D9),
+        color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(8),
       ),
+      child: const Icon(Icons.recycling_rounded, color: AppColors.primary, size: 24),
     );
 
-    if (item.gambarUrl == null) return placeholder;
+    if (item.gambarUrl == null || item.gambarUrl!.isEmpty) {
+      return placeholder;
+    }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -945,33 +998,27 @@ class _KatalogScreenState extends State<KatalogScreen> {
     required String keterangan,
     bool tombolUlang = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 48, color: AppColors.textHint),
-          const SizedBox(height: 8),
-          Text(judul, style: AppTypography.h3(), textAlign: TextAlign.center),
-          const SizedBox(height: 4),
-          Text(
-            keterangan,
-            style: AppTypography.bodySmall(),
-            textAlign: TextAlign.center,
-          ),
-          if (tombolUlang) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _loadKatalog,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Muat Ulang'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 56, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text(judul, style: AppTypography.h3(), textAlign: TextAlign.center),
+            const SizedBox(height: 6),
+            Text(keterangan, style: AppTypography.bodySmall(), textAlign: TextAlign.center),
+            if (tombolUlang) ...[
+              const SizedBox(height: 16),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: _loadKatalog,
+                child: const Text('Coba Lagi'),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
