@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-<<<<<<< Updated upstream
-=======
 use App\Http\Controllers\WargaController;
 use App\Http\Controllers\PengurusController;
 use App\Http\Controllers\DlhController;
->>>>>>> Stashed changes
+use App\Http\Controllers\WargaController;
+use App\Http\Controllers\PengurusController;
+use App\Http\Controllers\DlhController;
 use App\Http\Controllers\KatalogController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,8 +24,6 @@ Route::post('/login', [AuthController::class, 'login']);
 // Katalog harga sampah
 Route::get('/katalog', [KatalogController::class, 'index']);
 
-<<<<<<< Updated upstream
-=======
 // Informasi & Pengumuman posko
 Route::get('/pengumuman', function () {
     $pengumuman = \App\Models\Pengumuman::orderByDesc('created_at')->get()->map(function ($p) {
@@ -52,7 +50,7 @@ Route::get('/pengumuman', function () {
     ]);
 });
 
->>>>>>> Stashed changes
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
