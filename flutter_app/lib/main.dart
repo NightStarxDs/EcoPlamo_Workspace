@@ -19,7 +19,8 @@ Future<void> main() async {
 }
 
 class EcoPlamoApp extends StatelessWidget {
-  const EcoPlamoApp({super.key});
+  final String initialRoute;
+  const EcoPlamoApp({super.key, this.initialRoute = '/splash'});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +28,7 @@ class EcoPlamoApp extends StatelessWidget {
       title: 'Eco Plamo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/splash',
+      initialRoute: initialRoute,
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const Login(),
