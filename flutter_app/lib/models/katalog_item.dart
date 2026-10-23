@@ -7,6 +7,10 @@ class KatalogItem {
   final String satuan; // 'Kg' atau 'Liter'
   final String? jenis; // dipakai chip filter, contoh: 'Botol'
   final String? gambarUrl; // null = tampilkan placeholder
+<<<<<<< Updated upstream
+=======
+  final String status; // 'aktif' atau 'nonaktif'
+>>>>>>> Stashed changes
 
   const KatalogItem({
     required this.id,
@@ -16,6 +20,10 @@ class KatalogItem {
     required this.satuan,
     this.jenis,
     this.gambarUrl,
+<<<<<<< Updated upstream
+=======
+    this.status = 'aktif',
+>>>>>>> Stashed changes
   });
 
   factory KatalogItem.fromJson(Map<String, dynamic> json) {
@@ -27,6 +35,10 @@ class KatalogItem {
       satuan: json['satuan'] as String? ?? 'Kg',
       jenis: json['jenis'] as String?,
       gambarUrl: json['gambar_url'] as String?,
+<<<<<<< Updated upstream
+=======
+      status: json['status'] as String? ?? 'aktif',
+>>>>>>> Stashed changes
     );
   }
 
