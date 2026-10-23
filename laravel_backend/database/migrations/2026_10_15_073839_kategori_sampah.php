@@ -12,13 +12,13 @@ return new class extends Migration
             $table->id('id_kategori');
             $table->unsignedBigInteger('id_pengurus');
             $table->string('nama_kategori', 100);
-            $table->string('deskripsi')->nullable();           // contoh: "Kering dan diikat rapi"
-            $table->decimal('harga_per_kg', 12, 2)->default(0);
-            $table->string('satuan', 20)->default('Kg');       // Kg atau Liter
-            $table->string('jenis', 50)->nullable();           // untuk chip filter: Botol, Kardus, dll
-            $table->string('gambar')->nullable();              // path gambar (opsional)
+            $table->text('deskripsi')->nullable();             // Deskripsi kategori sampah
+            $table->decimal('harga_per_kg', 12, 2)->default(0); // Harga per kilogram/liter
+            $table->string('satuan', 20)->default('Kg');       // Satuan: Kg atau Liter
+            $table->string('jenis', 50)->nullable();           // Jenis sampah: Botol, Kardus, Logam, Minyak, dll
+            $table->string('gambar')->nullable();              // Path gambar kategori
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
-            $table->timestamps(); // created_at & updated_at
+            $table->timestamps();
 
             $table->foreign('id_pengurus')
                 ->references('id_pengguna')->on('pengurus_rtrw')
