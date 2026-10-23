@@ -6,6 +6,10 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Warga;
+use App\Models\Pengurus;
+use App\Models\Dlh;
+
 
 class User extends Authenticatable
 {
@@ -46,7 +50,6 @@ class User extends Authenticatable
         return 'no_whatsapp';
     }
 
-
     public function warga()
     {
         return $this->hasOne(Warga::class, 'id_pengguna', 'id_pengguna');
@@ -60,5 +63,39 @@ class User extends Authenticatable
     public function dlh()
     {
         return $this->hasOne(Dlh::class, 'id_pengguna', 'id_pengguna');
+    }
+
+    /**
+     * Mengambil model spesialisasi / profil role terkait.
+     */
+    public function getRoleProfileAttribute()
+    {
+        return match ($this->role) {
+            'warga' => $this->warga,
+            'pengurus' => $this->pengurus,
+            'dlh' => $this->dlh,
+            default => null,
+        };
+    }
+
+    /**
+     * Format data role-spesifik untuk response API.
+     */
+    public function getRoleData(): ?array
+    {
+        return match ($this->role) {
+            'warga' => [
+                'alamat' => $this->warga?->alamat,
+                'blok_rumah' => $this->warga?->alamat,
+                'total_saldo' => (float) ($this->warga?->total_saldo ?? 0),
+            ],
+            'pengurus' => [
+                'jabatan' => $this->pengurus?->jabatan ?? 'Pengurus RT/RW',
+            ],
+            'dlh' => [
+                'nip_pegawai' => $this->dlh?->nip_pegawai ?? '-',
+            ],
+            default => null,
+        };
     }
 }

@@ -13,9 +13,13 @@ class Warga extends Model
     protected $table = 'warga';
 
     // Beri tahu Laravel nama Primary Key-nya
-    protected $primaryKey = 'id_warga';
-
-    // Kolom yang boleh diisi
+    protected $primaryKey = 'id_pengguna';
+    public $incrementing = false;
+<<<<<<< Updated upstream
+    public $timestamps = false;
+=======
+    public $timestamps = true;
+>>>>>>> Stashed changes
     protected $fillable = [
         'id_pengguna',
         'alamat',
@@ -26,5 +30,15 @@ class Warga extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_pengguna', 'id_pengguna');
+    }
+
+    public function setoran()
+    {
+        return $this->hasMany(Setoran::class, 'id_warga', 'id_pengguna');
+    }
+
+    public function pencairan()
+    {
+        return $this->hasMany(Pencairan::class, 'id_warga', 'id_pengguna');
     }
 }

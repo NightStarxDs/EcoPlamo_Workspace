@@ -9,8 +9,10 @@ class Dlh extends Model
 {
     use HasFactory;
 
-    protected $table = 'dlh';
-    protected $primaryKey = 'id_dlh';
+    protected $table = 'pihak_dlh';
+    protected $primaryKey = 'id_pengguna';
+    public $incrementing = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_pengguna',
