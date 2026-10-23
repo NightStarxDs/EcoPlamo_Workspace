@@ -202,12 +202,13 @@ class AuthService {
           }
         }
 
-        return {
-          'success': false,
-          'message': message,
-          'statusCode': response.statusCode,
-        };
-      }
+      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
+        'statusCode': response.statusCode,
+      };
     } on SocketException catch (_) {
       return {
         'success': false,
@@ -253,7 +254,7 @@ class AuthService {
 
       final data = jsonDecode(response.body);
 
-      if ((response.statusCode == 200 || response.statusCode == 201) &&
+      if (response.statusCode == 200 &&
           (data['success'] == true || data['data'] != null)) {
         final token = data['data']['token'] as String;
         final user = data['data']['user'] as Map<String, dynamic>;
@@ -269,7 +270,8 @@ class AuthService {
           'token': token,
         };
       } else {
-        String message = data['message'] ?? 'Pendaftaran gagal.';
+        String message =
+            data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
         if (data['errors'] != null && data['errors'] is Map) {
           final errors = data['errors'] as Map<String, dynamic>;
           if (errors.isNotEmpty) {
@@ -1092,6 +1094,7 @@ class AuthService {
 
   /// Tambah kategori sampah baru (Pengurus)
   Future<Map<String, dynamic>> tambahKategoriSampah({
+    String? kode,
     required String nama,
     required double harga,
     String? satuan,
@@ -1113,10 +1116,11 @@ class AuthService {
               'Authorization': 'Bearer $token',
             },
             body: jsonEncode({
+              'kode': kode?.trim(),
               'nama_kategori': nama.trim(),
               'harga_per_kg': harga,
               'satuan': (satuan ?? 'kg').trim(),
-              'jenis': (jenis ?? 'Anorganik').trim(),
+              'jenis': (jenis ?? 'Plastik').trim(),
               'deskripsi': deskripsi?.trim() ?? '',
             }),
           )
@@ -1135,6 +1139,7 @@ class AuthService {
   /// Update kategori sampah (Pengurus)
   Future<Map<String, dynamic>> updateKategoriSampah({
     required int id,
+    String? kode,
     required String nama,
     required double harga,
     String? satuan,
@@ -1156,10 +1161,11 @@ class AuthService {
               'Authorization': 'Bearer $token',
             },
             body: jsonEncode({
+              'kode': kode?.trim(),
               'nama_kategori': nama.trim(),
               'harga_per_kg': harga,
               'satuan': (satuan ?? 'kg').trim(),
-              'jenis': (jenis ?? 'Anorganik').trim(),
+              'jenis': (jenis ?? 'Plastik').trim(),
               'deskripsi': deskripsi?.trim() ?? '',
             }),
           )

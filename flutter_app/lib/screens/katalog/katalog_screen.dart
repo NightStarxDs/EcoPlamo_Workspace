@@ -43,7 +43,17 @@ class _KatalogScreenState extends State<KatalogScreen> {
   @override
   void initState() {
     super.initState();
-    _checkRoleAndLoad();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    final user = await _authService.getCurrentUser();
+    if (mounted) {
+      setState(() {
+        _isPengurus = user?['role'] == 'pengurus';
+      });
+    }
+    await _loadKatalog();
   }
 
   @override
@@ -113,6 +123,23 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   // ---------------- Aksi Pengurus (Tambah / Edit / Nonaktifkan / Hapus) ----------------
 
+  /// Warna badge kode sesuai kategori (P = Plastik, C = Logam, K = Kertas, Mj = Minyak)
+  Color _kodeColor(String kode) {
+    final prefix = kode.isEmpty ? '' : kode[0].toUpperCase();
+    switch (prefix) {
+      case 'P':
+        return const Color(0xFF1565C0); // biru – Plastik
+      case 'C':
+        return const Color(0xFFE65100); // oranye – Logam/Kaleng
+      case 'K':
+        return const Color(0xFF2E7D32); // hijau – Kertas
+      case 'M':
+        return const Color(0xFFF57F17); // kuning – Minyak
+      default:
+        return const Color(0xFF455A64); // abu-abu – lainnya
+    }
+  }
+
   void _tambahKategoriModal() {
     _formKategoriModal(null);
   }
@@ -123,10 +150,11 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   void _formKategoriModal(KatalogItem? item) {
     final isEdit = item != null;
+    final kodeCtrl = TextEditingController(text: item?.kode ?? '');
     final namaCtrl = TextEditingController(text: item?.nama ?? '');
     final hargaCtrl = TextEditingController(text: item != null ? item.harga.toStringAsFixed(0) : '');
     final satuanCtrl = TextEditingController(text: item?.satuan ?? 'kg');
-    final jenisCtrl = TextEditingController(text: item?.jenis ?? 'Anorganik');
+    final jenisCtrl = TextEditingController(text: item?.jenis ?? 'Plastik');
     final deskripsiCtrl = TextEditingController(text: item?.deskripsi ?? '');
     bool isSaving = false;
 
@@ -184,13 +212,32 @@ class _KatalogScreenState extends State<KatalogScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                TextField(
-                  controller: namaCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Kategori / Sampah',
-                    hintText: 'Contoh: Kardus Tebal',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: kodeCtrl,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: InputDecoration(
+                          labelText: 'Kode',
+                          hintText: 'P1, C1...',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: namaCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Kategori / Sampah',
+                          hintText: 'Contoh: Kardus Tebal',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -263,6 +310,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                             if (isEdit) {
                               res = await _authService.updateKategoriSampah(
                                 id: item.id,
+                                kode: kodeCtrl.text.trim(),
                                 nama: nama,
                                 harga: harga,
                                 satuan: satuanCtrl.text,
@@ -271,6 +319,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                               );
                             } else {
                               res = await _authService.tambahKategoriSampah(
+                                kode: kodeCtrl.text.trim(),
                                 nama: nama,
                                 harga: harga,
                                 satuan: satuanCtrl.text,
@@ -490,6 +539,14 @@ class _KatalogScreenState extends State<KatalogScreen> {
           ],
         ),
       ),
+      floatingActionButton: _isPengurus
+          ? FloatingActionButton.extended(
+              onPressed: _tambahKategoriModal,
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Tambah Kategori', style: TextStyle(color: Colors.white)),
+            )
+          : null,
       bottomNavigationBar: EcoBottomNavBar(
         currentIndex: 1,
         onTap: _onNavTap,
@@ -791,6 +848,29 @@ class _KatalogScreenState extends State<KatalogScreen> {
                   children: [
                     Row(
                       children: [
+                        // Kode badge (P1, C1, K1, Mj, dll.)
+                        if (item.kode.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _kodeColor(item.kode).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: _kodeColor(item.kode).withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Text(
+                              item.kode,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _kodeColor(item.kode),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         Expanded(
                           child: Text(
                             item.nama,

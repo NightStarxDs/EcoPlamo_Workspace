@@ -12,6 +12,7 @@ class KategoriSampah extends Model
 
     protected $fillable = [
         'id_pengurus',
+        'kode',
         'nama_kategori',
         'deskripsi',
         'harga_per_kg',

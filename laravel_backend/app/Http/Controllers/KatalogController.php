@@ -27,6 +27,7 @@ class KatalogController extends Controller
             ->map(function (KategoriSampah $item) {
                 return [
                     'id_kategori' => $item->id_kategori,
+                    'kode' => $item->kode ?? '',
                     'nama' => $item->nama_kategori,
                     'deskripsi' => $item->deskripsi ?? '',
                     'harga' => (float) $item->harga_per_kg,
@@ -55,6 +56,7 @@ class KatalogController extends Controller
         }
 
         $request->validate([
+            'kode' => 'nullable|string|max:20',
             'nama_kategori' => 'required|string|max:100',
             'harga_per_kg' => 'required|numeric|min:0',
             'satuan' => 'nullable|string|max:20',
@@ -64,6 +66,7 @@ class KatalogController extends Controller
 
         $item = KategoriSampah::create([
             'id_pengurus' => $user->id_pengguna,
+            'kode' => $request->kode ?? null,
             'nama_kategori' => $request->nama_kategori,
             'harga_per_kg' => $request->harga_per_kg,
             'satuan' => $request->satuan ?? 'kg',
@@ -96,6 +99,7 @@ class KatalogController extends Controller
         }
 
         $request->validate([
+            'kode' => 'nullable|string|max:20',
             'nama_kategori' => 'required|string|max:100',
             'harga_per_kg' => 'required|numeric|min:0',
             'satuan' => 'nullable|string|max:20',
@@ -104,6 +108,7 @@ class KatalogController extends Controller
         ]);
 
         $item->update([
+            'kode' => $request->kode ?? $item->kode,
             'nama_kategori' => $request->nama_kategori,
             'harga_per_kg' => $request->harga_per_kg,
             'satuan' => $request->satuan ?? $item->satuan,

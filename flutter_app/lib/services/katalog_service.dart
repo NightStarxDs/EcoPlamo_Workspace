@@ -11,15 +11,12 @@ class KatalogService {
   Future<List<KatalogItem>> fetchKatalog({bool all = false}) async {
     // Pakai base URL yang sama dengan AuthService (otomatis sesuai platform)
     final baseUrl = await AuthService().getBaseUrl();
-    final token = await AuthService().getToken();
+    final url = all ? '$baseUrl/katalog?all=1' : '$baseUrl/katalog';
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/katalog${all ? '?all=1' : ''}'),
-        headers: {
-          'Accept': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
+        Uri.parse(url),
+        headers: {'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
