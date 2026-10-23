@@ -4,6 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\WargaController;
 use App\Http\Controllers\PengurusController;
 use App\Http\Controllers\DlhController;
+use App\Http\Controllers\WargaController;
+use App\Http\Controllers\PengurusController;
+use App\Http\Controllers\DlhController;
 use App\Http\Controllers\KatalogController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +49,7 @@ Route::get('/pengumuman', function () {
         'data' => $pengumuman,
     ]);
 });
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
