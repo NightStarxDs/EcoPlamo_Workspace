@@ -8,13 +8,14 @@ import 'auth_service.dart';
 class KatalogService {
   /// GET /api/katalog
   /// Melempar Exception berisi pesan yang siap ditampilkan jika gagal.
-  Future<List<KatalogItem>> fetchKatalog() async {
+  Future<List<KatalogItem>> fetchKatalog({bool all = false}) async {
     // Pakai base URL yang sama dengan AuthService (otomatis sesuai platform)
     final baseUrl = await AuthService().getBaseUrl();
+    final url = all ? '$baseUrl/katalog?all=1' : '$baseUrl/katalog';
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/katalog'),
+        Uri.parse(url),
         headers: {'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
