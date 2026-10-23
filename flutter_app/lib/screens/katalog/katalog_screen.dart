@@ -43,17 +43,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
   @override
   void initState() {
     super.initState();
-    _initData();
-  }
-
-  Future<void> _initData() async {
-    final user = await _authService.getCurrentUser();
-    if (mounted) {
-      setState(() {
-        _isPengurus = user?['role'] == 'pengurus';
-      });
-    }
-    await _loadKatalog();
+    _checkRoleAndLoad();
   }
 
   @override
@@ -539,14 +529,6 @@ class _KatalogScreenState extends State<KatalogScreen> {
           ],
         ),
       ),
-      floatingActionButton: _isPengurus
-          ? FloatingActionButton.extended(
-              onPressed: _tambahKategoriModal,
-              backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Tambah Kategori', style: TextStyle(color: Colors.white)),
-            )
-          : null,
       bottomNavigationBar: EcoBottomNavBar(
         currentIndex: 1,
         onTap: _onNavTap,

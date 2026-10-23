@@ -202,13 +202,12 @@ class AuthService {
           }
         }
 
-      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
-      return {
-        'success': false,
-        'message':
-            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
-        'statusCode': response.statusCode,
-      };
+        return {
+          'success': false,
+          'message': message,
+          'statusCode': response.statusCode,
+        };
+      }
     } on SocketException catch (_) {
       return {
         'success': false,
