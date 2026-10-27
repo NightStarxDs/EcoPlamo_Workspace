@@ -11,6 +11,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFFE8F5E9);
   static const Color primaryAccent = Color(0xFF10B981); // HANYA untuk fill/dekorasi (2.5:1)
   static const Color accentDark = Color(0xFF047857); // varian aksen untuk ikon/teks (5.4:1)
+  static const Color accentLight = Color(0xFFD1FAE5); // tint aksen hijau muda
 
   // Background & Surfaces
   static const Color background = Color(0xFFF8FAF8);
