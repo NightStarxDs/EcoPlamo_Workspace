@@ -149,9 +149,13 @@ class AuthService {
     }
   }
 
-  /// Fungsi Login ke backend Laravel
-  Future<Map<String, dynamic>> login({
+  /// Fungsi Registrasi akun warga ke backend Laravel (FR-01)
+  Future<Map<String, dynamic>> register({
+    required String namaLengkap,
     required String noWhatsapp,
+    required String tipeHunian,
+    required String alamat,
+    String? nomorHunian,
     required String password,
   }) async {
     try {
@@ -167,6 +171,9 @@ class AuthService {
             },
             body: jsonEncode({
               'no_whatsapp': noWhatsapp.trim(),
+              'tipe_hunian': tipeHunian,
+              'alamat': alamat.trim(),
+              'nomor_hunian': nomorHunian?.trim(),
               'password': password,
             }),
           )
@@ -202,12 +209,13 @@ class AuthService {
           }
         }
 
-        return {
-          'success': false,
-          'message': message,
-          'statusCode': response.statusCode,
-        };
-      }
+      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
+      return {
+        'success': false,
+        'message':
+            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
+        'statusCode': response.statusCode,
+      };
     } on SocketException catch (_) {
       return {
         'success': false,

@@ -22,19 +22,23 @@ class AuthController extends Controller
         $request->merge(['clean_whatsapp' => $cleanWhatsapp]);
 
         $validator = Validator::make($request->all(), [
-            'nama_lengkap'   => 'required|string|max:255',
-            'no_whatsapp'    => 'required|string',
-            'clean_whatsapp' => ['required', 'regex:/^08[0-9]{8,11}$/', 'unique:users,no_whatsapp'],
-            'alamat'         => 'required|string|max:500',
-            'password'       => 'required|string|min:8',
+            'nama_lengkap' => 'required|string|max:100',
+            'no_whatsapp' => ['required', 'regex:/^08[0-9]{8,11}$/', 'unique:users,no_whatsapp'],
+            'tipe_hunian' => 'required|in:kos_kontrakan,rumah_biasa',
+            'alamat' => 'required_if:tipe_hunian,rumah_biasa|nullable|string|max:255',
+            'nomor_hunian' => 'required_if:tipe_hunian,kos_kontrakan|nullable|string|max:100',
+            'password' => 'required|string|min:8',
         ], [
-            'nama_lengkap.required'   => 'Nama lengkap wajib diisi.',
-            'no_whatsapp.required'    => 'Nomor WhatsApp wajib diisi.',
-            'clean_whatsapp.regex'    => 'Nomor WhatsApp harus diawali 08 dan berisi 10-13 digit.',
-            'clean_whatsapp.unique'   => 'Nomor WhatsApp sudah terdaftar.',
-            'alamat.required'         => 'Blok & nomor rumah wajib diisi.',
-            'password.required'       => 'Kata sandi wajib diisi.',
-            'password.min'            => 'Kata sandi minimal 8 karakter.',
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+            'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi.',
+            'no_whatsapp.regex' => 'Nomor WhatsApp harus diawali 08 dan berisi 10-13 digit.',
+            'no_whatsapp.unique' => 'Nomor WhatsApp sudah digunakan.',
+            'tipe_hunian.required' => 'Tipe tempat tinggal wajib dipilih.',
+            'tipe_hunian.in' => 'Tipe tempat tinggal tidak valid.',
+            'alamat.required_if' => 'Alamat rumah wajib diisi.',
+            'nomor_hunian.required_if' => 'Nomor pintu atau nomor kontrakan wajib diisi.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min' => 'Kata sandi minimal 8 karakter.',
         ]);
 
         if ($validator->fails()) {
@@ -45,18 +49,22 @@ class AuthController extends Controller
             ], 422);
         }
 
-        try {
-            // Simpan ke tabel users dan warga dalam satu transaksi.
-            // Jika salah satu gagal, keduanya dibatalkan.
-            $user = DB::transaction(function () use ($request, $cleanWhatsapp) {
-                // 1. Buat record di superclass 'users'
-                // Catatan: password di-hash otomatis oleh cast 'hashed' di User model
-                $user = User::create([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_whatsapp'  => $cleanWhatsapp,
-                    'password'     => $request->password, // auto-hashed via model cast
-                    'role'         => 'warga', // registrasi mandiri selalu sebagai warga
-                ]);
+        // Simpan ke tabel users dan warga sekaligus.
+        // Jika salah satu gagal, keduanya dibatalkan.
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'nama_lengkap' => $request->nama_lengkap,
+                'no_whatsapp' => $request->no_whatsapp,
+                'password' => $request->password, // otomatis di-hash (casts di model User)
+                'role' => 'warga', // registrasi mandiri selalu sebagai warga
+            ]);
+
+            Warga::create([
+                'id_pengguna' => $user->id_pengguna,
+                'tipe_hunian' => $request->tipe_hunian,
+                'alamat' => $request->alamat,
+                'nomor_hunian' => $request->nomor_hunian,
+            ]);
 
                 // 2. Buat record di subclass 'warga' (Generalisasi ERD)
                 Warga::create([

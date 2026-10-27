@@ -19,7 +19,9 @@ class Warga extends Model
 
     protected $fillable = [
         'id_pengguna',
+        'tipe_hunian',
         'alamat',
+        'nomor_hunian',
         'total_saldo',
     ];
 

@@ -7,6 +7,8 @@ import '../../widgets/eco_button.dart';
 import '../../widgets/eco_logo.dart';
 import '../../widgets/eco_text_field.dart';
 
+enum _TipeHunian { kosKontrakan, rumahBiasa }
+
 /// Screen: Registrasi Akun Warga (FR-01)
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
+  _TipeHunian? _tipeHunian;
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
@@ -63,7 +66,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String? _validateAlamat(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Blok & nomor rumah wajib diisi';
+      return _tipeHunian == _TipeHunian.kosKontrakan
+          ? 'Nomor pintu atau nomor kontrakan wajib diisi'
+          : 'Alamat rumah wajib diisi';
+    }
+    return null;
+  }
+
+  String? _validateTipeHunian(_TipeHunian? value) {
+    if (value == null) {
+      return 'Tipe tempat tinggal wajib dipilih';
     }
     return null;
   }
@@ -90,10 +102,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
+    final alamat = _alamatController.text.trim();
     final res = await _authService.register(
       namaLengkap: _namaController.text,
       noWhatsapp: _whatsappController.text,
-      alamat: _alamatController.text,
+      tipeHunian: _tipeHunian == _TipeHunian.kosKontrakan
+          ? 'kos_kontrakan'
+          : 'rumah_biasa',
+      alamat: _tipeHunian == _TipeHunian.rumahBiasa ? alamat : '',
+      nomorHunian: _tipeHunian == _TipeHunian.kosKontrakan ? alamat : null,
       password: _passwordController.text,
     );
 
@@ -207,12 +224,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
             validator: _validateWhatsapp,
           ),
           const SizedBox(height: 16),
-          EcoTextField(
-            label: 'Blok & Nomor Rumah',
-            hintText: 'Contoh: Blok A No. 2',
-            controller: _alamatController,
-            validator: _validateAlamat,
-          ),
+          _buildTipeHunianField(),
+          if (_tipeHunian != null) ...[
+            const SizedBox(height: 16),
+            EcoTextField(
+              key: ValueKey(_tipeHunian),
+              label: _tipeHunian == _TipeHunian.kosKontrakan
+                  ? 'Nomor Pintu / Nomor Kontrakan'
+                  : 'Alamat Rumah',
+              hintText: _tipeHunian == _TipeHunian.kosKontrakan
+                  ? 'Contoh: Pintu 3 atau Kontrakan No. 2'
+                  : 'Contoh: Blok A No. 2',
+              controller: _alamatController,
+              validator: _validateAlamat,
+            ),
+          ],
           const SizedBox(height: 16),
           EcoTextField(
             label: 'Kata Sandi',
@@ -245,6 +271,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _buildLoginLink(),
         ],
       ),
+    );
+  }
+
+  Widget _buildTipeHunianField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Tipe Tempat Tinggal', style: AppTypography.formLabel()),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<_TipeHunian>(
+          initialValue: _tipeHunian,
+          decoration: InputDecoration(
+            hintText: 'Pilih tipe tempat tinggal',
+            hintStyle: AppTypography.formHint(),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.borderFocused,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.error, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+            ),
+          ),
+          style: AppTypography.formInput(),
+          validator: _validateTipeHunian,
+          items: const [
+            DropdownMenuItem(
+              value: _TipeHunian.kosKontrakan,
+              child: Text('Kontrakan / Kos'),
+            ),
+            DropdownMenuItem(
+              value: _TipeHunian.rumahBiasa,
+              child: Text('Rumah Biasa'),
+            ),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _tipeHunian = value;
+              _alamatController.clear();
+            });
+          },
+        ),
+      ],
     );
   }
 
