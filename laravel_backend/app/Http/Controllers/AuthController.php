@@ -20,14 +20,19 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:100',
             'no_whatsapp' => ['required', 'regex:/^08[0-9]{8,11}$/', 'unique:users,no_whatsapp'],
-            'alamat' => 'required|string|max:255',
+            'tipe_hunian' => 'required|in:kos_kontrakan,rumah_biasa',
+            'alamat' => 'required_if:tipe_hunian,rumah_biasa|nullable|string|max:255',
+            'nomor_hunian' => 'required_if:tipe_hunian,kos_kontrakan|nullable|string|max:100',
             'password' => 'required|string|min:8',
         ], [
             'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
             'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi.',
             'no_whatsapp.regex' => 'Nomor WhatsApp harus diawali 08 dan berisi 10-13 digit.',
             'no_whatsapp.unique' => 'Nomor WhatsApp sudah digunakan.',
-            'alamat.required' => 'Blok & nomor rumah wajib diisi.',
+            'tipe_hunian.required' => 'Tipe tempat tinggal wajib dipilih.',
+            'tipe_hunian.in' => 'Tipe tempat tinggal tidak valid.',
+            'alamat.required_if' => 'Alamat rumah wajib diisi.',
+            'nomor_hunian.required_if' => 'Nomor pintu atau nomor kontrakan wajib diisi.',
             'password.required' => 'Kata sandi wajib diisi.',
             'password.min' => 'Kata sandi minimal 8 karakter.',
         ]);
@@ -52,7 +57,9 @@ class AuthController extends Controller
 
             Warga::create([
                 'id_pengguna' => $user->id_pengguna,
+                'tipe_hunian' => $request->tipe_hunian,
                 'alamat' => $request->alamat,
+                'nomor_hunian' => $request->nomor_hunian,
             ]);
 
             return $user;

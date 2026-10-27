@@ -125,17 +125,17 @@ class AuthService {
             'Gagal terhubung ke server Laravel. Pastikan "php artisan serve" sudah aktif.',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan koneksi: $e',
-      };
+      return {'success': false, 'message': 'Terjadi kesalahan koneksi: $e'};
     }
   }
+
   /// Fungsi Registrasi akun warga ke backend Laravel (FR-01)
   Future<Map<String, dynamic>> register({
     required String namaLengkap,
     required String noWhatsapp,
+    required String tipeHunian,
     required String alamat,
+    String? nomorHunian,
     required String password,
   }) async {
     try {
@@ -152,7 +152,9 @@ class AuthService {
             body: jsonEncode({
               'nama_lengkap': namaLengkap.trim(),
               'no_whatsapp': noWhatsapp.trim(),
+              'tipe_hunian': tipeHunian,
               'alamat': alamat.trim(),
+              'nomor_hunian': nomorHunian?.trim(),
               'password': password,
             }),
           )
@@ -170,7 +172,8 @@ class AuthService {
       // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
       return {
         'success': false,
-        'message': data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
+        'message':
+            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
         'statusCode': response.statusCode,
       };
     } on SocketException catch (_) {
@@ -185,10 +188,7 @@ class AuthService {
         'message': 'Koneksi jaringan gagal: ${e.message}',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan: $e',
-      };
+      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
     }
   }
 
@@ -217,7 +217,8 @@ class AuthService {
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && (data['success'] == true || data['data'] != null)) {
+      if (response.statusCode == 200 &&
+          (data['success'] == true || data['data'] != null)) {
         final token = data['data']['token'] as String;
         final user = data['data']['user'] as Map<String, dynamic>;
 
@@ -232,7 +233,8 @@ class AuthService {
           'token': token,
         };
       } else {
-        String message = data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
+        String message =
+            data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
         if (data['errors'] != null && data['errors'] is Map) {
           final errors = data['errors'] as Map<String, dynamic>;
           if (errors.isNotEmpty) {
@@ -261,10 +263,7 @@ class AuthService {
         'message': 'Koneksi jaringan gagal: ${e.message}',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan: $e',
-      };
+      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
     }
   }
 
@@ -299,14 +298,16 @@ class AuthService {
       if (token != null) {
         final baseUrl = await getBaseUrl();
         final url = Uri.parse('$baseUrl/logout');
-        await http.post(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ).timeout(const Duration(seconds: 4));
+        await http
+            .post(
+              url,
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+            )
+            .timeout(const Duration(seconds: 4));
       }
     } catch (_) {
       // Abaikan network error saat logout, tetap bersihkan data lokal
