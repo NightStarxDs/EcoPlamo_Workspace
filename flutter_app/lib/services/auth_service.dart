@@ -149,13 +149,9 @@ class AuthService {
     }
   }
 
-  /// Fungsi Registrasi akun warga ke backend Laravel (FR-01)
-  Future<Map<String, dynamic>> register({
-    required String namaLengkap,
+  /// Login akun warga ke backend Laravel.
+  Future<Map<String, dynamic>> login({
     required String noWhatsapp,
-    required String tipeHunian,
-    required String alamat,
-    String? nomorHunian,
     required String password,
   }) async {
     try {
@@ -171,9 +167,6 @@ class AuthService {
             },
             body: jsonEncode({
               'no_whatsapp': noWhatsapp.trim(),
-              'tipe_hunian': tipeHunian,
-              'alamat': alamat.trim(),
-              'nomor_hunian': nomorHunian?.trim(),
               'password': password,
             }),
           )
@@ -186,7 +179,6 @@ class AuthService {
         final token = data['data']['token'] as String;
         final user = data['data']['user'] as Map<String, dynamic>;
 
-        // Simpan token dan data user dengan safe storage
         await _setString(_keyToken, token);
         await _setString(_keyUser, jsonEncode(user));
 
@@ -196,24 +188,23 @@ class AuthService {
           'user': user,
           'token': token,
         };
-      } else {
-        String message =
-            data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
-        if (data['errors'] != null && data['errors'] is Map) {
-          final errors = data['errors'] as Map<String, dynamic>;
-          if (errors.isNotEmpty) {
-            final firstError = errors.values.first;
-            if (firstError is List && firstError.isNotEmpty) {
-              message = firstError.first.toString();
-            }
+      }
+
+      String message =
+          data['message'] ?? 'Nomor WhatsApp atau kata sandi tidak valid.';
+      if (data['errors'] is Map) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        if (errors.isNotEmpty) {
+          final firstError = errors.values.first;
+          if (firstError is List && firstError.isNotEmpty) {
+            message = firstError.first.toString();
           }
         }
+      }
 
-      // Gagal validasi, contoh: "Nomor WhatsApp sudah digunakan."
       return {
         'success': false,
-        'message':
-            data['message'] ?? 'Pendaftaran gagal. Periksa kembali data Anda.',
+        'message': message,
         'statusCode': response.statusCode,
       };
     } on SocketException catch (_) {
@@ -236,7 +227,9 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String namaLengkap,
     required String noWhatsapp,
+    required String tipeHunian,
     required String alamat,
+    String? nomorHunian,
     required String password,
   }) async {
     try {
@@ -253,7 +246,9 @@ class AuthService {
             body: jsonEncode({
               'nama_lengkap': namaLengkap.trim(),
               'no_whatsapp': noWhatsapp.trim(),
+              'tipe_hunian': tipeHunian,
               'alamat': alamat.trim(),
+              'nomor_hunian': nomorHunian?.trim(),
               'password': password,
             }),
           )
@@ -261,7 +256,7 @@ class AuthService {
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200 &&
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
           (data['success'] == true || data['data'] != null)) {
         final token = data['data']['token'] as String;
         final user = data['data']['user'] as Map<String, dynamic>;
