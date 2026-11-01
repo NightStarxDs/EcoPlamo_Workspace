@@ -51,25 +51,20 @@ class AuthController extends Controller
 
         // Simpan ke tabel users dan warga sekaligus.
         // Jika salah satu gagal, keduanya dibatalkan.
-        $user = DB::transaction(function () use ($request) {
-            $user = User::create([
-                'nama_lengkap' => $request->nama_lengkap,
-                'no_whatsapp' => $request->no_whatsapp,
-                'password' => $request->password, // otomatis di-hash (casts di model User)
-                'role' => 'warga', // registrasi mandiri selalu sebagai warga
-            ]);
+        try {
+            $user = DB::transaction(function () use ($request) {
+                $user = User::create([
+                    'nama_lengkap' => $request->nama_lengkap,
+                    'no_whatsapp' => $request->no_whatsapp,
+                    'password' => $request->password, // otomatis di-hash (casts di model User)
+                    'role' => 'warga', // registrasi mandiri selalu sebagai warga
+                ]);
 
-            Warga::create([
-                'id_pengguna' => $user->id_pengguna,
-                'tipe_hunian' => $request->tipe_hunian,
-                'alamat' => $request->alamat,
-                'nomor_hunian' => $request->nomor_hunian,
-            ]);
-
-                // 2. Buat record di subclass 'warga' (Generalisasi ERD)
                 Warga::create([
                     'id_pengguna' => $user->id_pengguna,
-                    'alamat'      => $request->alamat,
+                    'tipe_hunian' => $request->tipe_hunian,
+                    'alamat' => $request->alamat,
+                    'nomor_hunian' => $request->nomor_hunian,
                     'total_saldo' => 0,
                 ]);
 
@@ -81,8 +76,11 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pendaftaran akun berhasil! Selamat datang di Eco Plamo.',
+                'message' => 'Pendaftaran akun berhasil! Silakan bawa nomor tiket ke posko RT/RW untuk verifikasi domisili dan pembayaran.',
+                'nomor_tiket' => 'REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT),
                 'data'    => [
+                    'id_pengguna' => $user->id_pengguna,
+                    'nomor_tiket' => 'REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT),
                     'token' => $token,
                     'user'  => [
                         'id_pengguna'  => $user->id_pengguna,

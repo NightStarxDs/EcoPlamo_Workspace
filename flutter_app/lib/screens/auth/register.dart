@@ -6,10 +6,11 @@ import '../../theme/app_typography.dart';
 import '../../widgets/eco_button.dart';
 import '../../widgets/eco_logo.dart';
 import '../../widgets/eco_text_field.dart';
+import 'register_success_screen.dart';
 
 enum _TipeHunian { kosKontrakan, rumahBiasa }
 
-/// Screen: Registrasi Akun Warga (FR-01)
+/// Screen: Registrasi Akun Warga (FR-01) - Alur Baru dengan Verifikasi Posko RT/RW
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -26,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final AuthService _authService = AuthService();
 
   _TipeHunian? _tipeHunian;
+  String? _selectedRt = 'RT 01';
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
@@ -68,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (value == null || value.trim().isEmpty) {
       return _tipeHunian == _TipeHunian.kosKontrakan
           ? 'Nomor pintu atau nomor kontrakan wajib diisi'
-          : 'Alamat rumah wajib diisi';
+          : 'Blok dan nomor rumah wajib diisi';
     }
     return null;
   }
@@ -102,15 +104,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    final alamat = _alamatController.text.trim();
+    final rawAlamat = _alamatController.text.trim();
+    final fullAlamat = _selectedRt != null && _selectedRt!.isNotEmpty
+        ? '$rawAlamat, $_selectedRt / RW 08'
+        : rawAlamat;
+
     final res = await _authService.register(
       namaLengkap: _namaController.text,
       noWhatsapp: _whatsappController.text,
       tipeHunian: _tipeHunian == _TipeHunian.kosKontrakan
           ? 'kos_kontrakan'
           : 'rumah_biasa',
-      alamat: _tipeHunian == _TipeHunian.rumahBiasa ? alamat : '',
-      nomorHunian: _tipeHunian == _TipeHunian.kosKontrakan ? alamat : null,
+      alamat: _tipeHunian == _TipeHunian.rumahBiasa ? fullAlamat : '',
+      nomorHunian: _tipeHunian == _TipeHunian.kosKontrakan ? fullAlamat : null,
       password: _passwordController.text,
     );
 
@@ -118,10 +124,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     final berhasil = res['success'] == true;
-    _showMessage(res['message'] ?? '', isError: !berhasil);
 
     if (berhasil) {
-      _goToLogin();
+      HapticFeedback.mediumImpact();
+
+      // Ekstrak nomor tiket dari backend atau buat tiket referensi unik
+      final data = res['data'] is Map ? res['data'] : null;
+      final nomorTiket = res['nomor_tiket'] ??
+          data?['nomor_tiket'] ??
+          'REG-PLM-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+
+      // Alihkan langsung ke Layar Tiket Registrasi Warga
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RegisterSuccessScreen(
+            namaLengkap: _namaController.text.trim(),
+            noWhatsapp: _whatsappController.text.trim(),
+            tipeHunian: _tipeHunian == _TipeHunian.kosKontrakan
+                ? 'kos_kontrakan'
+                : 'rumah_biasa',
+            alamat: _alamatController.text.trim(),
+            rtRw: _selectedRt != null ? '$_selectedRt / RW 08' : 'RW 08 Plamo Garden',
+            nomorTiket: nomorTiket.toString(),
+            biayaPendaftaran: 'Rp 10.000',
+          ),
+        ),
+      );
+    } else {
+      _showMessage(res['message'] ?? 'Pendaftaran gagal.', isError: true);
     }
   }
 
@@ -152,13 +183,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.canvasWarm, // Warm neutral background
         body: SingleChildScrollView(
           child: Column(
             children: [
               _buildHeader(context),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: _buildForm(),
               ),
             ],
@@ -173,29 +204,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(24, statusBarHeight + 28, 24, 32),
+      padding: EdgeInsets.fromLTRB(24, statusBarHeight + 24, 24, 28),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          colors: [AppColors.houseGreen, AppColors.brandEmerald],
         ),
       ),
       child: Column(
         children: [
-          const EcoPlamoLogo(size: 72, withBackground: false),
+          const EcoPlamoLogo(size: 68, withBackground: false),
           const SizedBox(height: 12),
           Text(
-            'Buat Akun Baru',
+            'Pendaftaran Warga Baru',
             textAlign: TextAlign.center,
             style: AppTypography.displayBold(color: Colors.white),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            'Mulai perjalanan ekonomi sirkular Anda di Plamo Garden.',
+            'Bank Sampah Digital — Lingkungan RT/RW Plamo Garden',
             textAlign: TextAlign.center,
             style: AppTypography.slogan(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.9),
             ).copyWith(fontWeight: FontWeight.w600),
           ),
         ],
@@ -209,6 +240,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Banner Alur Verifikasi Posko & Uang Pendaftaran
+          _buildVerificationNoticeBanner(),
+          const SizedBox(height: 20),
+
           EcoTextField(
             label: 'Nama Lengkap',
             hintText: 'Sesuai KTP / Nama panggilan',
@@ -231,13 +266,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               key: ValueKey(_tipeHunian),
               label: _tipeHunian == _TipeHunian.kosKontrakan
                   ? 'Nomor Pintu / Nomor Kontrakan'
-                  : 'Alamat Rumah',
+                  : 'Blok & Nomor Rumah',
               hintText: _tipeHunian == _TipeHunian.kosKontrakan
                   ? 'Contoh: Pintu 3 atau Kontrakan No. 2'
-                  : 'Contoh: Blok A No. 2',
+                  : 'Contoh: Blok B No. 12',
               controller: _alamatController,
               validator: _validateAlamat,
             ),
+            const SizedBox(height: 16),
+            _buildRtField(),
           ],
           const SizedBox(height: 16),
           EcoTextField(
@@ -261,9 +298,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
+
+          // Ringkasan Biaya Registrasi
+          _buildRegistrationFeeCard(),
+          const SizedBox(height: 24),
+
+          // Tombol Full-Pill Aksi Starbucks
           EcoPrimaryButton(
-            text: 'Buat Akun',
+            text: 'Daftar & Ambil Tiket Posko',
+            borderRadius: 50,
+            backgroundColor: AppColors.accentGreen,
             isLoading: _isLoading,
             onPressed: _handleRegister,
           ),
@@ -271,6 +316,137 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _buildLoginLink(),
         ],
       ),
+    );
+  }
+
+  Widget _buildVerificationNoticeBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCeramic,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.mintWash,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.verified_user_rounded,
+              color: AppColors.brandEmerald,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Alur Verifikasi RT/RW',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Setelah mengisi formulir, Anda akan mendapatkan nomor tiket untuk verifikasi domisili & pembayaran kas pendaftaran di posko pengurus.',
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistrationFeeCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.payments_outlined, size: 18, color: AppColors.brandEmerald),
+              SizedBox(width: 8),
+              Text(
+                'Biaya Kas Pendaftaran Posko:',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const Text(
+            'Rp 10.000',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.brandEmerald,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRtField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Wilayah RT (Rukun Tetangga)', style: AppTypography.formLabel()),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedRt,
+          decoration: InputDecoration(
+            hintText: 'Pilih Wilayah RT',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
+            ),
+          ),
+          style: AppTypography.formInput(),
+          items: const [
+            DropdownMenuItem(value: 'RT 01', child: Text('RT 01 / RW 08')),
+            DropdownMenuItem(value: 'RT 02', child: Text('RT 02 / RW 08')),
+            DropdownMenuItem(value: 'RT 03', child: Text('RT 03 / RW 08')),
+            DropdownMenuItem(value: 'RT 04', child: Text('RT 04 / RW 08')),
+            DropdownMenuItem(value: 'RT 05', child: Text('RT 05 / RW 08')),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedRt = val);
+          },
+        ),
+      ],
     );
   }
 
