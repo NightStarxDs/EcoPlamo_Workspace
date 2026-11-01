@@ -51,14 +51,24 @@ class AuthController extends Controller
 
         // Simpan ke tabel users dan warga sekaligus.
         // Jika salah satu gagal, keduanya dibatalkan.
-        try {
-            $user = DB::transaction(function () use ($request) {
-                $user = User::create([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_whatsapp' => $request->no_whatsapp,
-                    'password' => $request->password, // otomatis di-hash (casts di model User)
-                    'role' => 'warga', // registrasi mandiri selalu sebagai warga
-                ]);
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'nama_lengkap' => $request->nama_lengkap,
+                'no_whatsapp' => $request->no_whatsapp,
+                'password' => $request->password, // otomatis di-hash (casts di model User)
+                'role' => 'warga', // registrasi mandiri selalu sebagai warga
+            ]);
+
+            $nomorTiket = 'REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT);
+
+            Warga::create([
+                'id_pengguna' => $user->id_pengguna,
+                'alamat' => $request->alamat,
+                'status_verifikasi' => 'menunggu',
+                'nomor_tiket' => $nomorTiket,
+                'uang_pendaftaran' => 10000.00,
+                'status_pembayaran' => 'belum_lunas',
+            ]);
 
                 Warga::create([
                     'id_pengguna' => $user->id_pengguna,
@@ -68,36 +78,23 @@ class AuthController extends Controller
                     'total_saldo' => 0,
                 ]);
 
-                return $user;
-            });
+        $warga = $user->warga;
+        $nomorTiket = $warga->nomor_tiket ?? ('REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT));
 
-            // Buat token otentikasi Sanctum langsung setelah registrasi
-            $token = $user->createToken('eco_plamo_token')->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Pendaftaran akun berhasil! Silakan bawa nomor tiket ke posko RT/RW untuk verifikasi domisili dan pembayaran.',
-                'nomor_tiket' => 'REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT),
-                'data'    => [
-                    'id_pengguna' => $user->id_pengguna,
-                    'nomor_tiket' => 'REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT),
-                    'token' => $token,
-                    'user'  => [
-                        'id_pengguna'  => $user->id_pengguna,
-                        'nama_lengkap' => $user->nama_lengkap,
-                        'no_whatsapp'  => $user->no_whatsapp,
-                        'role'         => $user->role,
-                        'role_data'    => $user->getRoleData(),
-                    ],
-                ],
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mendaftar akun: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Pendaftaran berhasil! Silakan bawa nomor tiket ke posko RT/RW untuk verifikasi domisili dan pembayaran kas posko.',
+            'nomor_tiket' => $nomorTiket,
+            'data' => [
+                'id_pengguna' => $user->id_pengguna,
+                'nama_lengkap' => $user->nama_lengkap,
+                'no_whatsapp' => $user->no_whatsapp,
+                'role' => $user->role,
+                'nomor_tiket' => $nomorTiket,
+                'status_verifikasi' => 'menunggu',
+                'biaya_pendaftaran' => 10000,
+            ],
+        ], 201);
     }
     /**
      * Handle login request from Flutter app.
@@ -132,6 +129,26 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'Nomor WhatsApp atau kata sandi tidak sesuai.',
             ], 401);
+        }
+
+        // Jika warga, periksa status verifikasi domisili & pembayaran posko
+        if ($user->role === 'warga' && $user->warga) {
+            if ($user->warga->status_verifikasi === 'menunggu') {
+                return response()->json([
+                    'success' => false,
+                    'is_pending_verification' => true,
+                    'nomor_tiket' => $user->warga->nomor_tiket,
+                    'message' => 'Akun Anda sedang menunggu verifikasi oleh Pengurus RT/RW dan pembayaran kas posko. Nomor Tiket: ' . ($user->warga->nomor_tiket ?? '-'),
+                ], 403);
+            }
+
+            if ($user->warga->status_verifikasi === 'ditolak') {
+                return response()->json([
+                    'success' => false,
+                    'is_rejected' => true,
+                    'message' => 'Pendaftaran akun Anda ditolak oleh Pengurus RT/RW: ' . ($user->warga->catatan_verifikasi ?? 'Data domisili tidak sesuai.'),
+                ], 403);
+            }
         }
 
         // Buat Sanctum token

@@ -4,8 +4,10 @@ import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_bottom_nav.dart';
+import '../../widgets/eco_responsive_body.dart';
 import 'catat_setoran_screen.dart';
 import 'kelola_pencairan_screen.dart';
+import 'verifikasi_warga_screen.dart';
 
 // =============================================================================
 // ATURAN AKSESIBILITAS / KETERBACAAN YANG DIPAKAI (sama dengan WargaDashboard)
@@ -78,6 +80,7 @@ class _PengurusDashboardState extends State<PengurusDashboard>
     'total_setoran': 0,
     'pencairan_menunggu': 0,
   };
+  int _wargaMenungguVerifikasi = 0;
   List<Map<String, dynamic>> _aktivitas = [];
   List<Map<String, dynamic>> _kategoriStats = [];
 
@@ -130,6 +133,7 @@ class _PengurusDashboardState extends State<PengurusDashboard>
     try {
       final user = await _authService.getCurrentUser();
       final dash = await _authService.getPengurusDashboard();
+      final verif = await _authService.getDaftarVerifikasi(status: 'menunggu');
       if (!mounted) return;
       setState(() {
         _currentUser = user;
@@ -145,6 +149,11 @@ class _PengurusDashboardState extends State<PengurusDashboard>
               dash['statistik_kategori'],
             );
           }
+        }
+        if (verif['success'] == true && verif['counts'] != null) {
+          final counts = verif['counts'] as Map<String, dynamic>;
+          _wargaMenungguVerifikasi =
+              (counts['menunggu'] as num?)?.toInt() ?? 0;
         }
         _isLoadingUser = false;
       });
@@ -234,63 +243,66 @@ class _PengurusDashboardState extends State<PengurusDashboard>
   // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    void onNavTap(int index) {
+      HapticFeedback.selectionClick();
+      if (index == 0) return;
+      if (index == 1) {
+        Navigator.pushNamed(context, '/katalog').then((_) => _loadUserData());
+      } else if (index == 2) {
+        _openCatatSetoran();
+      } else if (index == 3) {
+        Navigator.pushNamed(context, '/info').then((_) => _loadUserData());
+      } else if (index == 4) {
+        Navigator.pushNamed(context, '/profile').then((_) => _loadUserData());
+      }
+    }
+
+    void onScanTap() {
+      HapticFeedback.mediumImpact();
+      _openCatatSetoran();
+    }
+
     // AnnotatedRegion dihapus: AppBar sudah memakai SystemUiOverlayStyle.light
     // (ikon status bar terang di atas hijau). Wrapper lama menyatakan "dark".
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: _loadUserData,
-        child: FadeTransition(
-          opacity: _bodyFade,
-          child: SlideTransition(
-            position: _bodySlide,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
+      body: EcoResponsiveBody(
+        currentIndex: 0,
+        onTap: onNavTap,
+        onScanTap: onScanTap,
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: _loadUserData,
+          child: FadeTransition(
+            opacity: _bodyFade,
+            child: SlideTransition(
+              position: _bodySlide,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.only(bottom: 32),
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 16),
+                  _buildOverviewCard(),
+                  const SizedBox(height: 24),
+                  _buildManagementSection(),
+                  const SizedBox(height: 32),
+                  _buildActivitySection(),
+                  const SizedBox(height: 32),
+                  _buildStatsSection(),
+                ],
               ),
-              padding: const EdgeInsets.only(bottom: 32),
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 16),
-                _buildOverviewCard(),
-                const SizedBox(height: 24),
-                _buildManagementSection(),
-                const SizedBox(height: 32),
-                _buildActivitySection(),
-                const SizedBox(height: 32),
-                _buildStatsSection(),
-              ],
             ),
           ),
         ),
       ),
       bottomNavigationBar: EcoBottomNavBar(
         currentIndex: 0,
-        onTap: (index) {
-          HapticFeedback.selectionClick();
-          if (index == 0) return;
-          if (index == 1) {
-            Navigator.pushNamed(
-              context,
-              '/katalog',
-            ).then((_) => _loadUserData());
-          } else if (index == 2) {
-            _openCatatSetoran();
-          } else if (index == 3) {
-            Navigator.pushNamed(context, '/info').then((_) => _loadUserData());
-          } else if (index == 4) {
-            Navigator.pushNamed(
-              context,
-              '/profile',
-            ).then((_) => _loadUserData());
-          }
-        },
-        onScanTap: () {
-          HapticFeedback.mediumImpact();
-          _openCatatSetoran();
-        },
+        onTap: onNavTap,
+        onScanTap: onScanTap,
       ),
     );
   }
@@ -602,6 +614,7 @@ class _PengurusDashboardState extends State<PengurusDashboard>
             'Manajemen Saldo & Pencairan',
             icon: Icons.tune_rounded,
           ),
+          // Row 1: Pengaturan + Validasi Pencairan
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -632,6 +645,23 @@ class _PengurusDashboardState extends State<PengurusDashboard>
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          // Row 2: Verifikasi Warga (full width)
+          _manageTile(
+            icon: Icons.how_to_reg_rounded,
+            label: 'Verifikasi Warga Baru',
+            badge: _wargaMenungguVerifikasi,
+            fullWidth: true,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const VerifikasiWargaScreen(),
+                ),
+              ).then((_) => _loadUserData());
+            },
+          ),
         ],
       ),
     );
@@ -646,62 +676,96 @@ class _PengurusDashboardState extends State<PengurusDashboard>
     required String label,
     required VoidCallback onPressed,
     int badge = 0,
+    bool fullWidth = false,
   }) {
-    return Expanded(
-      child: Semantics(
-        button: true,
-        excludeSemantics: true,
-        label: badge > 0 ? '$label, $badge menunggu' : label,
-        onTap: onPressed,
-        child: Stack(
-          clipBehavior: Clip.none,
-          fit: StackFit.expand,
-          children: [
-            Material(
-              color: AppColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: AppColors.border, width: 1),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onPressed,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 96),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(icon, color: AppColors.primary, size: 22),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyMedium(
-                            color: AppColors.textPrimary,
-                          ).copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
+    final tile = Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: badge > 0 ? '$label, $badge menunggu' : label,
+      onTap: onPressed,
+      child: Stack(
+        clipBehavior: Clip.none,
+        fit: fullWidth ? StackFit.loose : StackFit.expand,
+        children: [
+          Material(
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: AppColors.border, width: 1),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onPressed,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: fullWidth ? 60 : 96,
+                  minWidth: fullWidth ? double.infinity : 0,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: fullWidth ? 14 : 12,
                   ),
+                  child: fullWidth
+                      ? Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(icon, color: AppColors.primary, size: 22),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: AppTypography.bodyMedium(
+                                  color: AppColors.textPrimary,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.textSecondary,
+                              size: 22,
+                            ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(icon, color: AppColors.primary, size: 22),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodyMedium(
+                                color: AppColors.textPrimary,
+                              ).copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
-            if (badge > 0)
-              Positioned(top: -6, right: -6, child: _countBadge(badge)),
-          ],
-        ),
+          ),
+          if (badge > 0)
+            Positioned(top: -6, right: -6, child: _countBadge(badge)),
+        ],
       ),
     );
+    return fullWidth ? tile : Expanded(child: tile);
   }
 
   Widget _countBadge(int count) {

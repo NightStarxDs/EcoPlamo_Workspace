@@ -416,101 +416,27 @@ class AuthService {
     }
   }
 
-  /// Ambil data real dashboard Warga dari backend database
-  Future<Map<String, dynamic>?> getWargaDashboard() async {
-    try {
-      final token = await getToken();
-      if (token == null) return null;
-
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/warga/dashboard');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return data['data'] as Map<String, dynamic>;
-        }
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
+  // ── Helper: authenticated GET/POST ────────────────────────────────────────
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
   }
 
-  /// Mengajukan pencairan saldo tunai warga ke database
-  Future<Map<String, dynamic>> ajukanPencairan(num nominal) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return {
-          'success': false,
-          'message': 'Sesi telah berakhir, silakan login kembali.',
-        };
-      }
-
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/warga/pencairan');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'nominal': nominal}),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 201 && (data['success'] == true),
-        'message':
-            data['message'] ??
-            (response.statusCode == 201
-                ? 'Berhasil mengajukan pencairan!'
-                : 'Gagal mengajukan pencairan.'),
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Terjadi kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Ambil data real dashboard Pengurus RT/RW dari backend database
+  /// Ambil data dashboard pengurus (overview, aktivitas, statistik_kategori).
   Future<Map<String, dynamic>?> getPengurusDashboard() async {
     try {
-      final token = await getToken();
-      if (token == null) return null;
-
       final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/dashboard');
-
+      final headers = await _authHeaders();
       final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
+          .get(Uri.parse('$baseUrl/pengurus/dashboard'), headers: headers)
           .timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return data['data'] as Map<String, dynamic>;
-        }
+        return data['data'] as Map<String, dynamic>?;
       }
       return null;
     } catch (_) {
@@ -518,818 +444,92 @@ class AuthService {
     }
   }
 
-  /// Ambil data real dashboard DLH dari backend database
-  Future<Map<String, dynamic>?> getDlhDashboard() async {
-    try {
-      final token = await getToken();
-      if (token == null) return null;
+  // ── Pengurus: Verifikasi Warga ─────────────────────────────────────────────
 
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/dlh/dashboard');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return data['data'] as Map<String, dynamic>;
-        }
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Ambil daftar pengumuman & informasi posko
-  Future<List<Map<String, dynamic>>> getPengumumanList() async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengumuman');
-      final response = await http
-          .get(url, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Simpan / perbarui data user lokal
-  Future<void> saveUser(Map<String, dynamic> user) async {
-    await _setString(_keyUser, jsonEncode(user));
-  }
-
-  /// Update data profil pengguna (nama lengkap, alamat)
-  Future<Map<String, dynamic>> updateProfile({
-    required String namaLengkap,
-    String? alamat,
+  /// GET /api/pengurus/verifikasi-warga?status=&search=
+  Future<Map<String, dynamic>> getDaftarVerifikasi({
+    String status = 'menunggu',
+    String search = '',
   }) async {
     try {
-      final token = await getToken();
-      if (token == null) {
-        return {'success': false, 'message': 'Sesi login telah berakhir.'};
-      }
-
       final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/profile/update');
-
-      final body = <String, dynamic>{'nama_lengkap': namaLengkap};
-      if (alamat != null) body['alamat'] = alamat;
-
+      final headers = await _authHeaders();
+      final uri = Uri.parse('$baseUrl/pengurus/verifikasi-warga').replace(
+        queryParameters: {
+          'status': status,
+          if (search.isNotEmpty) 'search': search,
+        },
+      );
       final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode(body),
-          )
+          .get(uri, headers: headers)
           .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['success'] == true) {
-        // Simpan update ke local user cache jika ada
-        if (data['data']?['user'] != null) {
-          await saveUser(Map<String, dynamic>.from(data['data']['user']));
-        }
-        return {
-          'success': true,
-          'message': data['message'] ?? 'Profil berhasil diperbarui.',
-        };
-      }
-      return {
-        'success': false,
-        'message': data['message'] ?? 'Gagal memperbarui profil.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan jaringan: $e'};
-    }
-  }
-
-  /// Ubah kata sandi pengguna
-  Future<Map<String, dynamic>> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return {'success': false, 'message': 'Sesi login telah berakhir.'};
-      }
-
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/profile/change-password');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'current_password': currentPassword,
-              'new_password': newPassword,
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
-          'message': data['message'] ?? 'Kata sandi berhasil diperbarui.',
+          'counts': data['counts'] ?? {},
+          'data': (data['data'] as List<dynamic>)
+              .map((e) => e as Map<String, dynamic>)
+              .toList(),
         };
       }
-      return {
-        'success': false,
-        'message': data['message'] ?? 'Gagal mengubah kata sandi.',
-      };
+      return {'success': false, 'message': data['message'] ?? 'Gagal memuat data.'};
     } catch (e) {
-      return {'success': false, 'message': 'Kesalahan jaringan: $e'};
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // PENGURUS API METHODS
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /// Cari warga – mendukung QR string (ECP-123) dan pencarian manual (nama/WA/alamat)
-  Future<List<Map<String, dynamic>>> searchWarga(String q) => wargaSearch(q);
-
-  Future<List<Map<String, dynamic>>> wargaSearch(String q) async {
-    try {
-      final token = await getToken();
-      if (token == null) return [];
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse(
-        '$baseUrl/pengurus/warga-search?q=${Uri.encodeQueryComponent(q)}',
-      );
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Ambil daftar seluruh warga (pengurus)
-  Future<List<Map<String, dynamic>>> getWargaList() async {
-    try {
-      final token = await getToken();
-      if (token == null) return [];
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/warga-list');
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Catat setoran sampah warga (pengurus)
-  /// [idWarga] = id_pengguna warga; [items] = [{id_kategori, berat_kg}, ...]
-  Future<Map<String, dynamic>> catatSetoran({
-    required int idWarga,
-    required List<Map<String, dynamic>> items,
+  /// POST /api/pengurus/verifikasi-warga/{id}/setujui
+  Future<Map<String, dynamic>> setujuiWarga(
+    int idPengguna, {
+    double uangPendaftaran = 10000,
+    String catatan = '',
   }) async {
     try {
-      final token = await getToken();
-      if (token == null) {
-        return {
-          'success': false,
-          'message': 'Sesi habis, silakan login ulang.',
-        };
-      }
       final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/setoran');
-
+      final headers = await _authHeaders();
       final response = await http
           .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'id_warga': idWarga, 'items': items}),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': (response.statusCode == 201) && (data['success'] == true),
-        'message':
-            data['message'] ??
-            (response.statusCode == 201
-                ? 'Berhasil!'
-                : 'Gagal menyimpan setoran.'),
-        'data': data['data'],
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Ambil daftar pengajuan pencairan (pengurus)
-  Future<List<Map<String, dynamic>>> getPencairanList({String? status}) async {
-    try {
-      final token = await getToken();
-      if (token == null) return [];
-      final baseUrl = await getBaseUrl();
-      final query = status != null ? '?status=$status' : '';
-      final url = Uri.parse('$baseUrl/pengurus/pencairan$query');
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Validasi pengajuan pencairan (setujui / tolak)
-  Future<Map<String, dynamic>> validasiPencairan({
-    required int idPencairan,
-    required String aksi, // 'setujui' atau 'tolak'
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return {
-          'success': false,
-          'message': 'Sesi habis, silakan login ulang.',
-        };
-      }
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse(
-        '$baseUrl/pengurus/pencairan/$idPencairan/validasi',
-      );
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'aksi': aksi}),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && (data['success'] == true),
-        'message': data['message'] ?? 'Selesai.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Ajukan pencairan dana tunai oleh warga
-  Future<Map<String, dynamic>> ajukanPencairanWarga({
-    required double nominal,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return {
-          'success': false,
-          'message': 'Sesi habis, silakan login ulang.',
-        };
-      }
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/warga/pencairan');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'nominal': nominal}),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success':
-            (response.statusCode == 200 || response.statusCode == 201) &&
-            data['success'] == true,
-        'message': data['message'] ?? 'Pengajuan selesai.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Ambil riwayat mutasi saldo / ledger kas warga
-  Future<Map<String, dynamic>> getMutasiSaldoWarga() async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return {'success': false, 'data': <Map<String, dynamic>>[]};
-      }
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/warga/mutasi');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          return {
-            'success': true,
-            'saldo_sekarang':
-                (data['saldo_sekarang'] as num?)?.toDouble() ?? 0.0,
-            'data': List<Map<String, dynamic>>.from(data['data'] ?? []),
-          };
-        }
-      }
-      return {'success': false, 'data': <Map<String, dynamic>>[]};
-    } catch (_) {
-      return {'success': false, 'data': <Map<String, dynamic>>[]};
-    }
-  }
-
-  /// Terbitkan pengumuman posko baru oleh pengurus
-  Future<Map<String, dynamic>> buatPengumuman({
-    required String judul,
-    required String isi,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/pengumuman');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({'judul': judul.trim(), 'isi': isi.trim()}),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 201 && data['success'] == true,
-        'message': data['message'] ?? 'Selesai.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan: $e'};
-    }
-  }
-
-  /// Ambil rekapitulasi laporan bulanan bank sampah
-  Future<Map<String, dynamic>?> getLaporanRekap({
-    int? bulan,
-    int? tahun,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) return null;
-      final baseUrl = await getBaseUrl();
-      final q = [
-        if (bulan != null) 'bulan=$bulan',
-        if (tahun != null) 'tahun=$tahun',
-      ].join('&');
-      final url = Uri.parse(
-        '$baseUrl/pengurus/laporan${q.isNotEmpty ? '?$q' : ''}',
-      );
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) return data['data'];
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Ambil daftar verifikasi laporan oleh DLH
-  Future<List<Map<String, dynamic>>> getDlhVerifikasiList() async {
-    try {
-      final token = await getToken();
-      if (token == null) return [];
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/dlh/verifikasi');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Simpan atau konfirmasi verifikasi laporan bulanan oleh DLH
-  Future<Map<String, dynamic>> simpanDlhVerifikasi({
-    required int bulan,
-    required int tahun,
-    required String status,
-    String? catatan,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/dlh/verifikasi');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
+            Uri.parse('$baseUrl/pengurus/verifikasi-warga/$idPengguna/setujui'),
+            headers: headers,
             body: jsonEncode({
-              'bulan': bulan,
-              'tahun': tahun,
-              'status': status,
-              'catatan': catatan,
+              'uang_pendaftaran': uangPendaftaran,
+              if (catatan.isNotEmpty) 'catatan': catatan,
             }),
           )
           .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Verifikasi berhasil disimpan.',
+        'success': data['success'] == true,
+        'message': data['message'] ?? (data['success'] == true ? 'Berhasil.' : 'Gagal.'),
       };
     } catch (e) {
-      return {'success': false, 'message': 'Kesalahan: $e'};
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
     }
   }
 
-  /// Ambil katalog harga sampah (bisa all=true untuk pengurus)
-  Future<List<Map<String, dynamic>>> getKatalogList({bool all = false}) async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/katalog${all ? '?all=1' : ''}');
-      final token = await getToken();
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Tambah kategori sampah baru (Pengurus)
-  Future<Map<String, dynamic>> tambahKategoriSampah({
-    String? kode,
-    required String nama,
-    required double harga,
-    String? satuan,
-    String? jenis,
-    String? deskripsi,
+  /// POST /api/pengurus/verifikasi-warga/{id}/tolak
+  Future<Map<String, dynamic>> tolakWarga(
+    int idPengguna, {
+    required String alasan,
   }) async {
     try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
       final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/katalog');
-
+      final headers = await _authHeaders();
       final response = await http
           .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'kode': kode?.trim(),
-              'nama_kategori': nama.trim(),
-              'harga_per_kg': harga,
-              'satuan': (satuan ?? 'kg').trim(),
-              'jenis': (jenis ?? 'Plastik').trim(),
-              'deskripsi': deskripsi?.trim() ?? '',
-            }),
+            Uri.parse('$baseUrl/pengurus/verifikasi-warga/$idPengguna/tolak'),
+            headers: headers,
+            body: jsonEncode({'alasan': alasan}),
           )
           .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       return {
-        'success': response.statusCode == 201 && data['success'] == true,
-        'message': data['message'] ?? 'Kategori berhasil ditambahkan.',
+        'success': data['success'] == true,
+        'message': data['message'] ?? (data['success'] == true ? 'Berhasil.' : 'Gagal.'),
       };
     } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Update kategori sampah (Pengurus)
-  Future<Map<String, dynamic>> updateKategoriSampah({
-    required int id,
-    String? kode,
-    required String nama,
-    required double harga,
-    String? satuan,
-    String? jenis,
-    String? deskripsi,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/katalog/$id');
-
-      final response = await http
-          .put(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'kode': kode?.trim(),
-              'nama_kategori': nama.trim(),
-              'harga_per_kg': harga,
-              'satuan': (satuan ?? 'kg').trim(),
-              'jenis': (jenis ?? 'Plastik').trim(),
-              'deskripsi': deskripsi?.trim() ?? '',
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Kategori berhasil diperbarui.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Toggle status aktif/nonaktif kategori sampah
-  Future<Map<String, dynamic>> toggleStatusKategoriSampah(int id) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/katalog/$id/toggle-status');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Status berhasil diubah.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Hapus kategori sampah
-  Future<Map<String, dynamic>> hapusKategoriSampah(int id) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/katalog/$id');
-
-      final response = await http
-          .delete(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Kategori berhasil dihapus.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Hapus pengumuman
-  Future<Map<String, dynamic>> hapusPengumuman(int id) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/pengumuman/$id');
-
-      final response = await http
-          .delete(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Pengumuman berhasil dihapus.',
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
-    }
-  }
-
-  /// Ambil aturan pengaturan pencairan
-  Future<Map<String, dynamic>> getPengaturanPencairan() async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final token = await getToken();
-      final url = Uri.parse('$baseUrl/pengurus/pengaturan-pencairan');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Accept': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) return data['data'] ?? {};
-      }
-      return {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  /// Simpan aturan pengaturan pencairan
-  Future<Map<String, dynamic>> simpanPengaturanPencairan({
-    required double targetMinimal,
-    String? tanggalMulai,
-    String? tanggalSelesai,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) return {'success': false, 'message': 'Sesi habis.'};
-      final baseUrl = await getBaseUrl();
-      final url = Uri.parse('$baseUrl/pengurus/pengaturan-pencairan');
-
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'target_minimal': targetMinimal,
-              'tanggal_mulai': tanggalMulai,
-              'tanggal_selesai': tanggalSelesai,
-            }),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      return {
-        'success': response.statusCode == 200 && data['success'] == true,
-        'message': data['message'] ?? 'Pengaturan berhasil disimpan.',
-        'data': data['data'],
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
     }
   }
 }

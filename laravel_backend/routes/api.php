@@ -5,6 +5,7 @@ use App\Http\Controllers\WargaController;
 use App\Http\Controllers\PengurusController;
 use App\Http\Controllers\DlhController;
 use App\Http\Controllers\KatalogController;
+use App\Http\Controllers\PengurusController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/tes-koneksi', function () {
@@ -51,35 +52,11 @@ Route::get('/pengumuman', function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/profile/update', [AuthController::class, 'updateProfile']);
-    Route::post('/profile/change-password', [AuthController::class, 'changePassword']);
 
-    // Warga routes (Real Database)
-    Route::get('/warga/dashboard', [WargaController::class, 'dashboard']);
-    Route::post('/warga/pencairan', [WargaController::class, 'ajukanPencairan']);
-    Route::get('/warga/mutasi', [WargaController::class, 'mutasiSaldo']);
-
-    // Pengurus routes (Real Database)
-    Route::get('/pengurus/dashboard', [PengurusController::class, 'dashboard']);
-    Route::get('/pengurus/warga-list', [PengurusController::class, 'wargaList']);
-    Route::get('/pengurus/warga-search', [PengurusController::class, 'wargaSearch']);
-    Route::post('/pengurus/setoran', [PengurusController::class, 'catatSetoran']);
-    Route::get('/pengurus/pencairan', [PengurusController::class, 'pencairanList']);
-    Route::post('/pengurus/pencairan/{id}/validasi', [PengurusController::class, 'validasiPencairan']);
-    Route::post('/pengurus/pengumuman', [PengurusController::class, 'buatPengumuman']);
-    Route::delete('/pengurus/pengumuman/{id}', [PengurusController::class, 'hapusPengumuman']);
-    Route::get('/pengurus/pengaturan-pencairan', [PengurusController::class, 'getPengaturanPencairan']);
-    Route::post('/pengurus/pengaturan-pencairan', [PengurusController::class, 'simpanPengaturanPencairan']);
-    Route::get('/pengurus/laporan', [PengurusController::class, 'laporanRekap']);
-
-    // Pengurus Kelola Katalog Sampah (Tambah, Edit, Toggle Status, Hapus)
-    Route::post('/pengurus/katalog', [KatalogController::class, 'store']);
-    Route::put('/pengurus/katalog/{id}', [KatalogController::class, 'update']);
-    Route::post('/pengurus/katalog/{id}/toggle-status', [KatalogController::class, 'toggleStatus']);
-    Route::delete('/pengurus/katalog/{id}', [KatalogController::class, 'destroy']);
-
-    // DLH routes (Real Database)
-    Route::get('/dlh/dashboard', [DlhController::class, 'dashboard']);
-    Route::get('/dlh/verifikasi', [DlhController::class, 'verifikasiList']);
-    Route::post('/dlh/verifikasi', [DlhController::class, 'simpanVerifikasi']);
+    // ── Pengurus: Verifikasi Warga ──────────────────────────────────────────
+    Route::prefix('pengurus')->group(function () {
+        Route::get('/verifikasi-warga', [PengurusController::class, 'getDaftarVerifikasi']);
+        Route::post('/verifikasi-warga/{id}/setujui', [PengurusController::class, 'setujuiWarga']);
+        Route::post('/verifikasi-warga/{id}/tolak', [PengurusController::class, 'tolakWarga']);
+    });
 });

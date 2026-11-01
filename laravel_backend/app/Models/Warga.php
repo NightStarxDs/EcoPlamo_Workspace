@@ -23,6 +23,13 @@ class Warga extends Model
         'alamat',
         'nomor_hunian',
         'total_saldo',
+        'status_verifikasi',
+        'nomor_tiket',
+        'uang_pendaftaran',
+        'status_pembayaran',
+        'verified_at',
+        'verified_by',
+        'catatan_verifikasi',
     ];
 
     // Relasi balik (Inverse) ke tabel Users
