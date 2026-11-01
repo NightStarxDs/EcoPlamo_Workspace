@@ -369,7 +369,7 @@ class AuthService {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] is Map) {
           final user = Map<String, dynamic>.from(data['data']);
-          await saveUser(user);
+          await _setString(_keyUser, jsonEncode(user));
           return user;
         }
       }
@@ -530,6 +530,469 @@ class AuthService {
       };
     } catch (e) {
       return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Dashboard ──────────────────────────────────────────────────────────────
+
+  /// GET /api/warga/dashboard
+  Future<Map<String, dynamic>?> getWargaDashboard() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/warga/dashboard'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data['data'] ?? data) as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// GET /api/dlh/dashboard
+  Future<Map<String, dynamic>?> getDlhDashboard() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/dlh/dashboard'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data['data'] ?? data) as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Profil ─────────────────────────────────────────────────────────────────
+
+  /// PUT /api/profile  — perbarui nama & alamat
+  Future<Map<String, dynamic>> updateProfile({
+    required String namaLengkap,
+    String? alamat,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/profile'),
+            headers: headers,
+            body: jsonEncode({
+              'nama_lengkap': namaLengkap,
+              if (alamat != null && alamat.isNotEmpty) 'alamat': alamat,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      if (ok && data['data'] is Map) {
+        await _setString(_keyUser, jsonEncode(data['data']));
+      }
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Profil diperbarui.' : 'Gagal memperbarui profil.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  /// POST /api/profile/change-password
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/profile/change-password'),
+            headers: headers,
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'new_password': newPassword,
+              'new_password_confirmation': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Kata sandi berhasil diubah.' : 'Gagal mengubah kata sandi.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Pengumuman ─────────────────────────────────────────────────────────────
+
+  /// GET /api/pengumuman
+  Future<List<Map<String, dynamic>>> getPengumumanList() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/pengumuman'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data'] ?? data;
+        if (list is List) {
+          return list.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// POST /api/pengumuman
+  Future<Map<String, dynamic>> buatPengumuman({
+    required String judul,
+    required String isi,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pengumuman'),
+            headers: headers,
+            body: jsonEncode({'judul': judul, 'isi': isi}),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 201;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Pengumuman diterbitkan.' : 'Gagal menerbitkan pengumuman.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  /// DELETE /api/pengumuman/{id}
+  Future<Map<String, dynamic>> hapusPengumuman(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .delete(Uri.parse('$baseUrl/pengumuman/$id'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Pengumuman dihapus.' : 'Gagal menghapus pengumuman.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Katalog Sampah (CRUD oleh Pengurus/DLH) ────────────────────────────────
+
+  Future<Map<String, dynamic>> tambahKategoriSampah({
+    required String nama,
+    required double harga,
+    String kode = '',
+    String satuan = 'Kg',
+    String jenis = '',
+    String deskripsi = '',
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/katalog'),
+            headers: headers,
+            body: jsonEncode({
+              'nama': nama,
+              'harga': harga,
+              if (kode.isNotEmpty) 'kode': kode,
+              'satuan': satuan,
+              if (jenis.isNotEmpty) 'jenis': jenis,
+              if (deskripsi.isNotEmpty) 'deskripsi': deskripsi,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 201;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Kategori ditambahkan.' : 'Gagal menambahkan kategori.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateKategoriSampah({
+    required int id,
+    required String nama,
+    required double harga,
+    String kode = '',
+    String satuan = 'Kg',
+    String jenis = '',
+    String deskripsi = '',
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/katalog/$id'),
+            headers: headers,
+            body: jsonEncode({
+              'nama': nama,
+              'harga': harga,
+              if (kode.isNotEmpty) 'kode': kode,
+              'satuan': satuan,
+              if (jenis.isNotEmpty) 'jenis': jenis,
+              if (deskripsi.isNotEmpty) 'deskripsi': deskripsi,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Kategori diperbarui.' : 'Gagal memperbarui kategori.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleStatusKategoriSampah(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .patch(Uri.parse('$baseUrl/katalog/$id/toggle-status'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Status diperbarui.' : 'Gagal mengubah status.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> hapusKategoriSampah(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .delete(Uri.parse('$baseUrl/katalog/$id'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Kategori dihapus.' : 'Gagal menghapus kategori.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Setoran Sampah ──────────────────────────────────────────────────────────
+
+  /// GET /api/warga/search?q= — cari warga untuk form catat setoran
+  Future<List<Map<String, dynamic>>> wargaSearch(String q) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final uri = Uri.parse('$baseUrl/warga/search')
+          .replace(queryParameters: {'q': q});
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data'] ?? data;
+        if (list is List) {
+          return list.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Alias searchWarga → wargaSearch (beberapa screen memakai nama berbeda)
+  Future<List<Map<String, dynamic>>> searchWarga(String q) => wargaSearch(q);
+
+  /// POST /api/setoran — catat setoran sampah warga
+  Future<Map<String, dynamic>> catatSetoran({
+    required int idWarga,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/setoran'),
+            headers: headers,
+            body: jsonEncode({'id_warga': idWarga, 'items': items}),
+          )
+          .timeout(const Duration(seconds: 15));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 201;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Setoran berhasil dicatat.' : 'Gagal mencatat setoran.'),
+        if (data['data'] != null) 'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Pencairan Saldo ─────────────────────────────────────────────────────────
+
+  /// GET /api/pencairan
+  Future<List<Map<String, dynamic>>> getPencairanList() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/pencairan'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data'] ?? data;
+        if (list is List) {
+          return list.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// POST /api/pencairan/{id}/validasi
+  Future<Map<String, dynamic>> validasiPencairan({
+    required int idPencairan,
+    required String aksi, // 'setujui' | 'tolak'
+    String? catatan,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pencairan/$idPencairan/validasi'),
+            headers: headers,
+            body: jsonEncode({
+              'aksi': aksi,
+              if (catatan != null && catatan.isNotEmpty) 'catatan': catatan,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Pencairan diproses.' : 'Gagal memproses pencairan.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Pengaturan Pencairan ────────────────────────────────────────────────────
+
+  /// GET /api/pengurus/pengaturan-pencairan
+  Future<Map<String, dynamic>> getPengaturanPencairan() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/pengurus/pengaturan-pencairan'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data['data'] ?? data);
+      }
+      return {'target_minimal': 50000};
+    } catch (_) {
+      return {'target_minimal': 50000};
+    }
+  }
+
+  /// POST /api/pengurus/pengaturan-pencairan
+  Future<Map<String, dynamic>> simpanPengaturanPencairan({
+    required double targetMinimal,
+    required String tanggalMulai,
+    required String tanggalSelesai,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pengurus/pengaturan-pencairan'),
+            headers: headers,
+            body: jsonEncode({
+              'target_minimal': targetMinimal,
+              'tanggal_mulai': tanggalMulai,
+              'tanggal_selesai': tanggalSelesai,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 200;
+      return {
+        'success': ok,
+        'message': data['message'] ?? (ok ? 'Pengaturan pencairan tersimpan.' : 'Gagal menyimpan pengaturan.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  // ── Riwayat Mutasi Saldo ────────────────────────────────────────────────────
+
+  /// GET /api/warga/mutasi
+  Future<Map<String, dynamic>> getMutasiSaldoWarga() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/warga/mutasi'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'saldo_sekarang': (data['saldo_sekarang'] ?? data['data']?['saldo'] ?? 0),
+          'data': data['data'] is List ? data['data'] : (data['mutasi'] ?? []),
+        };
+      }
+      return {'saldo_sekarang': 0, 'data': []};
+    } catch (_) {
+      return {'saldo_sekarang': 0, 'data': []};
     }
   }
 }

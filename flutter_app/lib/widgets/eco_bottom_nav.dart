@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
+const double ecoResponsiveBreakpoint = 720;
+
 /// Bottom Navigation Bar Eco Plamo sesuai Figma Halaman 16:
 /// - 5 Item: Home, Katalog, Scan & QR Saya (Floating Center), Info, Profile
 /// - Active indicator berupa garis pill hijau di bawah label menu yang aktif
@@ -19,6 +21,10 @@ class EcoBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.sizeOf(context).width >= ecoResponsiveBreakpoint) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -38,9 +44,19 @@ class EcoBottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
-              _buildNavItem(1, Icons.menu_book_outlined, Icons.menu_book, 'Katalog'),
+              _buildNavItem(
+                1,
+                Icons.menu_book_outlined,
+                Icons.menu_book,
+                'Katalog',
+              ),
               _buildCenterScanButton(),
-              _buildNavItem(3, Icons.notifications_none, Icons.notifications, 'Info'),
+              _buildNavItem(
+                3,
+                Icons.notifications_none,
+                Icons.notifications,
+                'Info',
+              ),
               _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile'),
             ],
           ),
@@ -49,7 +65,12 @@ class EcoBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, IconData outlineIcon, IconData filledIcon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+  ) {
     final bool isActive = currentIndex == index;
     final color = isActive ? AppColors.primary : AppColors.textSecondary;
 
@@ -61,11 +82,7 @@ class EcoBottomNavBar extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? filledIcon : outlineIcon,
-              color: color,
-              size: 24,
-            ),
+            Icon(isActive ? filledIcon : outlineIcon, color: color, size: 24),
             const SizedBox(height: 3),
             Text(
               label,
@@ -127,10 +144,9 @@ class EcoBottomNavBar extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               'Scan & QR',
-              style: AppTypography.caption(color: AppColors.primary).copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTypography.caption(
+                color: AppColors.primary,
+              ).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
             ),
           ],
         ),

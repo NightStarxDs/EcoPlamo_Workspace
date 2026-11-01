@@ -10,6 +10,9 @@ class AppTheme {
     final RoundedRectangleBorder r12 = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
     );
+    final RoundedRectangleBorder pillRadius = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(50),
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -17,13 +20,8 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
-        onPrimary: Colors.white, // 6.4:1
         surface: AppColors.surface,
-        onSurface: AppColors.textPrimary, // ~16:1
         error: AppColors.error,
-        onError: Colors.white, // 4.8:1
-        outline: AppColors.border, // 3.3:1 — batas komponen
-        outlineVariant: AppColors.borderLight, // dekoratif
       ),
 
       // Text Theme with Poppins Headings + Jakarta Sans Body
@@ -39,6 +37,7 @@ class AppTheme {
         labelLarge: AppTypography.button(),
       ),
 
+      // AppBar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -50,18 +49,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        hintStyle: AppTypography.formHint(), // 4.8:1
-        labelStyle: AppTypography.formLabel(color: AppColors.textSecondary),
-        floatingLabelStyle: AppTypography.formLabel(
-          color: AppColors.textSecondary,
-        ),
-        // Pesan galat: merah 4.8:1 di atas putih, 12sp, selalu berupa teks.
-        errorStyle: AppTypography.caption(color: AppColors.error),
-        errorMaxLines: 3,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
+        hintStyle: AppTypography.formHint(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
@@ -72,10 +61,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.borderFocused,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: AppColors.borderFocused, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -87,17 +73,13 @@ class AppTheme {
         ),
       ),
 
-      // Elevated Button Theme (Figma Spec)
+      // Elevated Button Theme (Starbucks Full-Pill Spec)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.accentGreen, // Luminous CTA Green
           foregroundColor: Colors.white,
-          // Disabled tetap terbaca (default M3 ≈ 2:1). Wajib dibaca sebagai
-          // "tidak aktif" tapi tetap bisa dibaca isinya.
-          disabledBackgroundColor: AppColors.borderLight,
-          disabledForegroundColor: AppColors.textSecondary,
           elevation: 0,
-          shape: r12,
+          shape: pillRadius,
           textStyle: AppTypography.button(),
           minimumSize: const Size.fromHeight(52),
         ),
@@ -110,7 +92,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.borderLight,
           disabledForegroundColor: AppColors.textSecondary,
-          shape: r12,
+          shape: pillRadius,
           textStyle: AppTypography.button(),
           minimumSize: const Size.fromHeight(52),
         ),
@@ -120,7 +102,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: r12,
+          shape: pillRadius,
           textStyle: AppTypography.button(),
           minimumSize: const Size(64, 52),
         ),

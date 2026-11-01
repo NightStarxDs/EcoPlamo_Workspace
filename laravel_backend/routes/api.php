@@ -5,7 +5,6 @@ use App\Http\Controllers\WargaController;
 use App\Http\Controllers\PengurusController;
 use App\Http\Controllers\DlhController;
 use App\Http\Controllers\KatalogController;
-use App\Http\Controllers\PengurusController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/tes-koneksi', function () {
