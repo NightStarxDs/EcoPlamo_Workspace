@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -16,7 +15,7 @@ class AuthTest extends TestCase
         User::factory()->create([
             'nama_lengkap' => 'Budi Warga',
             'no_whatsapp' => '081111111111',
-            'password' => Hash::make('password123'),
+            'password' => 'password123',
         ]);
 
         $response = $this->postJson('/api/login', [
@@ -63,5 +62,45 @@ class AuthTest extends TestCase
                 'message',
                 'errors',
             ]);
+    }
+
+    public function test_registration_stores_housing_type_and_room_number_separately(): void
+    {
+        $response = $this->postJson('/api/register', [
+            'nama_lengkap' => 'Budi Warga',
+            'no_whatsapp' => '081111111111',
+            'tipe_hunian' => 'kos_kontrakan',
+            'alamat' => null,
+            'nomor_hunian' => 'Pintu 3',
+            'password' => 'password123',
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('warga', [
+            'id_pengguna' => $response->json('data.id_pengguna'),
+            'tipe_hunian' => 'kos_kontrakan',
+            'alamat' => null,
+            'nomor_hunian' => 'Pintu 3',
+        ]);
+    }
+
+    public function test_registration_stores_regular_home_address_separately(): void
+    {
+        $response = $this->postJson('/api/register', [
+            'nama_lengkap' => 'Siti Warga',
+            'no_whatsapp' => '082222222222',
+            'tipe_hunian' => 'rumah_biasa',
+            'alamat' => 'Blok A No. 2',
+            'nomor_hunian' => null,
+            'password' => 'password123',
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('warga', [
+            'id_pengguna' => $response->json('data.id_pengguna'),
+            'tipe_hunian' => 'rumah_biasa',
+            'alamat' => 'Blok A No. 2',
+            'nomor_hunian' => null,
+        ]);
     }
 }

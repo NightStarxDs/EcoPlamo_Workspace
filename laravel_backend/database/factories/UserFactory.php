@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -33,7 +32,8 @@ class UserFactory extends Factory
             
             'whatsapp_verified_at' => now(),
             
-            'password' => static::$password ??= Hash::make('password'),
+            // User model hashed-cast hashes once; do not Hash::make here.
+            'password' => static::$password ??= 'password',
             
             'role' => 'warga', 
             

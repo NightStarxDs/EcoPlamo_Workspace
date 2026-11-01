@@ -193,9 +193,23 @@ class _SplashScreenState extends State<SplashScreen>
       });
     }
 
-    // 3. Verifikasi status autentikasi pengguna
+    // 3. Verifikasi status autentikasi pengguna dan tentukan rute berdasarkan role
     final authService = AuthService();
     final isLoggedIn = await authService.isLoggedIn();
+
+    String targetRoute = '/login';
+    if (isLoggedIn) {
+      final user = await authService.getCurrentUser();
+      final role = user?['role']?.toString().toLowerCase();
+
+      if (role == 'pengurus') {
+        targetRoute = '/pengurus-dashboard';
+      } else if (role == 'dlh') {
+        targetRoute = '/dlh-dashboard';
+      } else {
+        targetRoute = '/warga-dashboard';
+      }
+    }
 
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
@@ -204,10 +218,7 @@ class _SplashScreenState extends State<SplashScreen>
     await _exitController.forward();
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(
-      context,
-      isLoggedIn ? '/home' : '/login',
-    );
+    Navigator.pushReplacementNamed(context, targetRoute);
   }
 
   @override

@@ -12,7 +12,7 @@ class Dlh extends Model
     protected $table = 'pihak_dlh';
     protected $primaryKey = 'id_pengguna';
     public $incrementing = false;
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_pengguna',

@@ -3,6 +3,10 @@ import 'screens/auth/login.dart';
 import 'screens/auth/register.dart';
 import 'screens/katalog/katalog_screen.dart';
 import 'screens/warga/warga_dashboard.dart';
+import 'screens/pengurus/pengurus_dashboard.dart';
+import 'screens/dlh/dlh_dashboard.dart';
+import 'screens/info/info_screen.dart';
+import 'screens/profile/profile_screen.dart';
 import 'screens/tes_koneksi.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
@@ -15,7 +19,8 @@ Future<void> main() async {
 }
 
 class EcoPlamoApp extends StatelessWidget {
-  const EcoPlamoApp({super.key});
+  final String initialRoute;
+  const EcoPlamoApp({super.key, this.initialRoute = '/splash'});
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +28,19 @@ class EcoPlamoApp extends StatelessWidget {
       title: 'Eco Plamo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/splash',
+      initialRoute: initialRoute,
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const Login(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const WargaDashboard(),
         '/warga-dashboard': (context) => const WargaDashboard(),
+        '/pengurus-dashboard': (context) => const PengurusDashboard(),
+        '/dlh-dashboard': (context) => const DlhDashboard(),
+        '/home': (context) => const WargaDashboard(), // Fallback for legacy
         '/tes-koneksi': (context) => const TesKoneksiScreen(),
-        '/katalog': (context) => const KatalogScreen(), // ← BARU
+        '/katalog': (context) => const KatalogScreen(),
+        '/info': (context) => const InfoScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

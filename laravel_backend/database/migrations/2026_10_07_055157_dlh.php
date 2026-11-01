@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('dlh', function (Blueprint $table) {
-            $table->id('id_dlh');
-            $table->unsignedBigInteger('id_pengguna');
+        Schema::create('pihak_dlh', function (Blueprint $table) {
+            // Generalisasi: id_pengguna sebagai Primary Key sekaligus Foreign Key ke users
+            $table->unsignedBigInteger('id_pengguna')->primary();
             
             $table->string('nip_pegawai')->unique();
             
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('dlh');
+        Schema::dropIfExists('pihak_dlh');
     }
 };
