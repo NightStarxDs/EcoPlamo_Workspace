@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_app_bar.dart';
 import '../../widgets/eco_bottom_nav.dart';
+import '../../widgets/eco_responsive_body.dart';
 import '../../widgets/eco_scan_modal.dart';
 import '../pengurus/catat_setoran_screen.dart';
 import 'info_detail_screen.dart';
@@ -66,8 +67,10 @@ class _InfoScreenState extends State<InfoScreen> {
       final isi = (item['isi'] as String? ?? '').toLowerCase();
       final query = _searchQuery.toLowerCase();
 
-      final matchesCategory = _activeCategory == 'Semua' || kategori == _activeCategory;
-      final matchesSearch = query.isEmpty || judul.contains(query) || isi.contains(query);
+      final matchesCategory =
+          _activeCategory == 'Semua' || kategori == _activeCategory;
+      final matchesSearch =
+          query.isEmpty || judul.contains(query) || isi.contains(query);
 
       return matchesCategory && matchesSearch;
     }).toList();
@@ -86,7 +89,10 @@ class _InfoScreenState extends State<InfoScreen> {
       Navigator.pushReplacementNamed(context, '/katalog');
     } else if (index == 2) {
       if (_isPengurus) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CatatSetoranScreen()),
+        );
       } else {
         EcoScanModal.show(context);
       }
@@ -139,8 +145,11 @@ class _InfoScreenState extends State<InfoScreen> {
                       color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.campaign_rounded,
-                        color: AppColors.primary, size: 22),
+                    child: const Icon(
+                      Icons.campaign_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text('Buat Pengumuman Baru', style: AppTypography.h3()),
@@ -152,7 +161,9 @@ class _InfoScreenState extends State<InfoScreen> {
                 decoration: InputDecoration(
                   labelText: 'Judul Informasi / Pengumuman',
                   hintText: 'Contoh: Jadwal Penimbangan Rutin Hari Minggu',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -162,14 +173,18 @@ class _InfoScreenState extends State<InfoScreen> {
                 decoration: InputDecoration(
                   labelText: 'Isi Informasi',
                   hintText: 'Tuliskan rincian pengumuman untuk seluruh warga…',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
                   onPressed: isSending
                       ? null
                       : () async {
@@ -177,19 +192,26 @@ class _InfoScreenState extends State<InfoScreen> {
                           final i = isiCtrl.text.trim();
                           if (j.isEmpty || i.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Judul dan isi wajib diisi.')),
+                              const SnackBar(
+                                content: Text('Judul dan isi wajib diisi.'),
+                              ),
                             );
                             return;
                           }
                           final messenger = ScaffoldMessenger.of(context);
                           final nav = Navigator.of(ctx);
                           setMState(() => isSending = true);
-                          final res = await _authService.buatPengumuman(judul: j, isi: i);
+                          final res = await _authService.buatPengumuman(
+                            judul: j,
+                            isi: i,
+                          );
                           if (!mounted) return;
                           nav.pop();
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text(res['message']?.toString() ?? 'Terkirim.'),
+                              content: Text(
+                                res['message']?.toString() ?? 'Terkirim.',
+                              ),
                               backgroundColor: res['success'] == true
                                   ? AppColors.primary
                                   : AppColors.error,
@@ -202,7 +224,9 @@ class _InfoScreenState extends State<InfoScreen> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text('Terbitkan Pengumuman'),
                 ),
@@ -219,9 +243,14 @@ class _InfoScreenState extends State<InfoScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus Pengumuman?'),
-        content: const Text('Apakah Anda yakin ingin menghapus pengumuman ini?'),
+        content: const Text(
+          'Apakah Anda yakin ingin menghapus pengumuman ini?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
@@ -238,7 +267,9 @@ class _InfoScreenState extends State<InfoScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(res['message']?.toString() ?? ''),
-        backgroundColor: res['success'] == true ? AppColors.primary : AppColors.error,
+        backgroundColor: res['success'] == true
+            ? AppColors.primary
+            : AppColors.error,
       ),
     );
     if (res['success'] == true) _fetchPengumuman();
@@ -258,192 +289,240 @@ class _InfoScreenState extends State<InfoScreen> {
               onPressed: _buatPengumumanModal,
             )
           : null,
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: _fetchPengumuman,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            // Header Info & Search
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Informasi & Pengumuman', style: AppTypography.h2()),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Agenda kegiatan posko, pengumuman warga, dan edukasi lingkungan hidup.',
-                      style: AppTypography.bodySmall(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Search Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) => setState(() => _searchQuery = val),
-                        style: AppTypography.formInput(),
-                        decoration: InputDecoration(
-                          hintText: 'Cari agenda, pengumuman, atau tips...',
-                          hintStyle: AppTypography.formHint(),
-                          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textHint, size: 22),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      body: EcoResponsiveBody(
+        currentIndex: 3,
+        onTap: _onNavTap,
+        onScanTap: () => EcoScanModal.show(context),
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: _fetchPengumuman,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-
-            // Category Filter Chips
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 42,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _categories.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final cat = _categories[index];
-                    final isSelected = _activeCategory == cat;
-
-                    return ChoiceChip(
-                      label: Text(cat),
-                      selected: isSelected,
-                      onSelected: (val) {
-                        HapticFeedback.lightImpact();
-                        setState(() => _activeCategory = cat);
-                      },
-                      selectedColor: AppColors.primary,
-                      backgroundColor: Colors.white,
-                      labelStyle: TextStyle(
-                        fontFamily: 'Plus Jakarta Sans',
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isSelected ? AppColors.primary : AppColors.borderLight,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-            // Featured Banner (Halaman 9 Highlight)
-            if (_activeCategory == 'Semua' && _searchQuery.isEmpty && _items.isNotEmpty)
+            slivers: [
+              // Header Info & Search
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildFeaturedBanner(_items.first),
-                ),
-              ),
-
-            if (_activeCategory == 'Semua' && _searchQuery.isEmpty && _items.isNotEmpty)
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-            // List Title
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Daftar Kabar Posko', style: AppTypography.sectionTitle()),
-                    Text(
-                      '${_filteredItems.length} Informasi',
-                      style: AppTypography.caption(color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-            // Announcements List
-            if (_isLoading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                ),
-              )
-            else if (_filteredItems.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(40),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.article_outlined, size: 52, color: AppColors.textHint),
-                      const SizedBox(height: 12),
-                      Text('Tidak Ada Informasi', style: AppTypography.h3()),
+                      Text('Informasi & Pengumuman', style: AppTypography.h2()),
                       const SizedBox(height: 4),
                       Text(
-                        'Belum ada agenda atau pengumuman yang sesuai dengan pencarian Anda.',
-                        style: AppTypography.bodySmall(color: AppColors.textSecondary),
-                        textAlign: TextAlign.center,
+                        'Agenda kegiatan posko, pengumuman warga, dan edukasi lingkungan hidup.',
+                        style: AppTypography.bodySmall(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Search Field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderLight),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (val) =>
+                              setState(() => _searchQuery = val),
+                          style: AppTypography.formInput(),
+                          decoration: InputDecoration(
+                            hintText: 'Cari agenda, pengumuman, atau tips...',
+                            hintStyle: AppTypography.formHint(),
+                            prefixIcon: const Icon(
+                              Icons.search_rounded,
+                              color: AppColors.textHint,
+                              size: 22,
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.clear_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 13,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+              ),
+
+              // Category Filter Chips
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 42,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: _categories.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final cat = _categories[index];
+                      final isSelected = _activeCategory == cat;
+
+                      return ChoiceChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          HapticFeedback.lightImpact();
+                          setState(() => _activeCategory = cat);
+                        },
+                        selectedColor: AppColors.primary,
+                        backgroundColor: Colors.white,
+                        labelStyle: TextStyle(
+                          fontFamily: 'Plus Jakarta Sans',
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.borderLight,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+              // Featured Banner (Halaman 9 Highlight)
+              if (_activeCategory == 'Semua' &&
+                  _searchQuery.isEmpty &&
+                  _items.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildFeaturedBanner(_items.first),
+                  ),
+                ),
+
+              if (_activeCategory == 'Semua' &&
+                  _searchQuery.isEmpty &&
+                  _items.isNotEmpty)
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+              // List Title
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Daftar Kabar Posko',
+                        style: AppTypography.sectionTitle(),
+                      ),
+                      Text(
+                        '${_filteredItems.length} Informasi',
+                        style: AppTypography.caption(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+              // Announcements List
+              if (_isLoading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                )
+              else if (_filteredItems.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.article_outlined,
+                          size: 52,
+                          color: AppColors.textHint,
+                        ),
+                        const SizedBox(height: 12),
+                        Text('Tidak Ada Informasi', style: AppTypography.h3()),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Belum ada agenda atau pengumuman yang sesuai dengan pencarian Anda.',
+                          style: AppTypography.bodySmall(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
                       final item = _filteredItems[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _buildInfoCard(item),
                       );
-                    },
-                    childCount: _filteredItems.length,
+                    }, childCount: _filteredItems.length),
                   ),
                 ),
-              ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: EcoBottomNavBar(
@@ -493,7 +572,10 @@ class _InfoScreenState extends State<InfoScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(6),
@@ -525,7 +607,9 @@ class _InfoScreenState extends State<InfoScreen> {
                 const SizedBox(height: 12),
                 Text(
                   judul,
-                  style: AppTypography.h3(color: Colors.white).copyWith(fontSize: 17),
+                  style: AppTypography.h3(
+                    color: Colors.white,
+                  ).copyWith(fontSize: 17),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -543,9 +627,9 @@ class _InfoScreenState extends State<InfoScreen> {
                   children: [
                     Text(
                       'Baca Selengkapnya',
-                      style: AppTypography.button(color: const Color(0xFF5EE3A0)).copyWith(
-                        fontSize: 13,
-                      ),
+                      style: AppTypography.button(
+                        color: const Color(0xFF5EE3A0),
+                      ).copyWith(fontSize: 13),
                     ),
                     const SizedBox(width: 4),
                     const Icon(
@@ -638,7 +722,10 @@ class _InfoScreenState extends State<InfoScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: badgeBg,
                               borderRadius: BorderRadius.circular(4),
@@ -654,12 +741,17 @@ class _InfoScreenState extends State<InfoScreen> {
                           ),
                           Text(
                             tanggal,
-                            style: AppTypography.caption(color: AppColors.textMuted),
+                            style: AppTypography.caption(
+                              color: AppColors.textMuted,
+                            ),
                           ),
                           if (_isPengurus)
                             IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded,
-                                  color: AppColors.error, size: 20),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               visualDensity: VisualDensity.compact,
@@ -681,7 +773,9 @@ class _InfoScreenState extends State<InfoScreen> {
                       const SizedBox(height: 4),
                       Text(
                         isi,
-                        style: AppTypography.bodySmall(color: AppColors.textSecondary),
+                        style: AppTypography.bodySmall(
+                          color: AppColors.textSecondary,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

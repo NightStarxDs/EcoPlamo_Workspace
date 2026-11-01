@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_bottom_nav.dart';
 import '../../widgets/eco_logo.dart';
+import '../../widgets/eco_responsive_body.dart';
 import '../../widgets/eco_scan_modal.dart';
 import '../pengurus/catat_setoran_screen.dart';
 
@@ -82,13 +83,14 @@ class _KatalogScreenState extends State<KatalogScreen> {
   }
 
   List<String> get _daftarKategori {
-    final jenis = _items
-        .map((item) => item.jenis)
-        .whereType<String>()
-        .where((j) => j.trim().isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final jenis =
+        _items
+            .map((item) => item.jenis)
+            .whereType<String>()
+            .where((j) => j.trim().isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     return ['Semua', ...jenis];
   }
 
@@ -142,7 +144,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
     final isEdit = item != null;
     final kodeCtrl = TextEditingController(text: item?.kode ?? '');
     final namaCtrl = TextEditingController(text: item?.nama ?? '');
-    final hargaCtrl = TextEditingController(text: item != null ? item.harga.toStringAsFixed(0) : '');
+    final hargaCtrl = TextEditingController(
+      text: item != null ? item.harga.toStringAsFixed(0) : '',
+    );
     final satuanCtrl = TextEditingController(text: item?.satuan ?? 'kg');
     final jenisCtrl = TextEditingController(text: item?.jenis ?? 'Plastik');
     final deskripsiCtrl = TextEditingController(text: item?.deskripsi ?? '');
@@ -196,7 +200,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      isEdit ? 'Edit Kategori Sampah' : 'Tambah Kategori Sampah',
+                      isEdit
+                          ? 'Edit Kategori Sampah'
+                          : 'Tambah Kategori Sampah',
                       style: AppTypography.h3(),
                     ),
                   ],
@@ -212,7 +218,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                         decoration: InputDecoration(
                           labelText: 'Kode',
                           hintText: 'P1, C1...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -223,7 +231,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                         decoration: InputDecoration(
                           labelText: 'Nama Kategori / Sampah',
                           hintText: 'Contoh: Kardus Tebal',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -240,7 +250,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                         decoration: InputDecoration(
                           labelText: 'Harga (Rp)',
                           hintText: 'Contoh: 3000',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -252,7 +264,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                         decoration: InputDecoration(
                           labelText: 'Satuan',
                           hintText: 'kg / liter',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -264,7 +278,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                   decoration: InputDecoration(
                     labelText: 'Jenis / Kelompok',
                     hintText: 'Kardus / Plastik / Minyak / Logam',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -274,22 +290,31 @@ class _KatalogScreenState extends State<KatalogScreen> {
                   decoration: InputDecoration(
                     labelText: 'Deskripsi / Kondisi Sampah',
                     hintText: 'Contoh: Bersih, kering, tidak basah/berminyak',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
                     onPressed: isSaving
                         ? null
                         : () async {
                             final nama = namaCtrl.text.trim();
-                            final harga = double.tryParse(hargaCtrl.text.trim()) ?? 0;
+                            final harga =
+                                double.tryParse(hargaCtrl.text.trim()) ?? 0;
                             if (nama.isEmpty || harga <= 0) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Nama dan harga valid wajib diisi.')),
+                                const SnackBar(
+                                  content: Text(
+                                    'Nama dan harga valid wajib diisi.',
+                                  ),
+                                ),
                               );
                               return;
                             }
@@ -321,17 +346,24 @@ class _KatalogScreenState extends State<KatalogScreen> {
                             nav.pop();
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text(res['message']?.toString() ?? 'Selesai.'),
-                                backgroundColor:
-                                    res['success'] == true ? AppColors.primary : AppColors.error,
+                                content: Text(
+                                  res['message']?.toString() ?? 'Selesai.',
+                                ),
+                                backgroundColor: res['success'] == true
+                                    ? AppColors.primary
+                                    : AppColors.error,
                               ),
                             );
                             if (res['success'] == true) _loadKatalog();
                           },
                     child: isSaving
                         ? const SizedBox(
-                            width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(isEdit ? 'Simpan Perubahan' : 'Tambah Sekarang'),
                   ),
@@ -349,10 +381,17 @@ class _KatalogScreenState extends State<KatalogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(item.status == 'aktif' ? 'Nonaktifkan Kategori?' : 'Aktifkan Kategori?'),
+        title: Text(
+          item.status == 'aktif'
+              ? 'Nonaktifkan Kategori?'
+              : 'Aktifkan Kategori?',
+        ),
         content: Text('Ubah status "${item.nama}" menjadi $nextStatus?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(item.status == 'aktif' ? 'Nonaktifkan' : 'Aktifkan'),
@@ -367,7 +406,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(res['message']?.toString() ?? ''),
-        backgroundColor: res['success'] == true ? AppColors.primary : AppColors.error,
+        backgroundColor: res['success'] == true
+            ? AppColors.primary
+            : AppColors.error,
       ),
     );
     if (res['success'] == true) _loadKatalog();
@@ -380,7 +421,10 @@ class _KatalogScreenState extends State<KatalogScreen> {
         title: const Text('Hapus Kategori Sampah?'),
         content: Text('Apakah Anda yakin ingin menghapus "${item.nama}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(ctx, true),
@@ -396,7 +440,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(res['message']?.toString() ?? ''),
-        backgroundColor: res['success'] == true ? AppColors.primary : AppColors.error,
+        backgroundColor: res['success'] == true
+            ? AppColors.primary
+            : AppColors.error,
       ),
     );
     if (res['success'] == true) _loadKatalog();
@@ -425,7 +471,10 @@ class _KatalogScreenState extends State<KatalogScreen> {
       );
     } else if (index == 2) {
       if (_isPengurus) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CatatSetoranScreen()),
+        );
       } else {
         EcoScanModal.show(context);
       }
@@ -493,40 +542,54 @@ class _KatalogScreenState extends State<KatalogScreen> {
               onPressed: _tambahKategoriModal,
             )
           : null,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: _loadKatalog,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                      sliver: SliverToBoxAdapter(
-                        child: Column(
-                          children: [
-                            _buildJudul(),
-                            const SizedBox(height: 16),
-                            _buildPencarian(),
-                          ],
+      body: EcoResponsiveBody(
+        currentIndex: 1,
+        onTap: _onNavTap,
+        onScanTap: () {
+          if (_isPengurus) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CatatSetoranScreen()),
+            );
+          } else {
+            EcoScanModal.show(context);
+          }
+        },
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildAppBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadKatalog,
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        sliver: SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              _buildJudul(),
+                              const SizedBox(height: 16),
+                              _buildPencarian(),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    SliverToBoxAdapter(child: _buildChipKategori()),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                      sliver: SliverToBoxAdapter(child: _buildInfo()),
-                    ),
-                    ..._buildIsi(),
-                  ],
+                      SliverToBoxAdapter(child: _buildChipKategori()),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        sliver: SliverToBoxAdapter(child: _buildInfo()),
+                      ),
+                      ..._buildIsi(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: EcoBottomNavBar(
@@ -534,7 +597,10 @@ class _KatalogScreenState extends State<KatalogScreen> {
         onTap: _onNavTap,
         onScanTap: () {
           if (_isPengurus) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const CatatSetoranScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CatatSetoranScreen()),
+            );
           } else {
             EcoScanModal.show(context);
           }
@@ -562,7 +628,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
               ),
               child: Text(
                 'Mode Pengurus',
-                style: AppTypography.caption(color: AppColors.primary).copyWith(fontWeight: FontWeight.w700),
+                style: AppTypography.caption(
+                  color: AppColors.primary,
+                ).copyWith(fontWeight: FontWeight.w700),
               ),
             ),
         ],
@@ -609,9 +677,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   Widget _buildPencarian() {
     OutlineInputBorder border(Color color) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: color),
-        );
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color),
+    );
 
     return Row(
       children: [
@@ -623,7 +691,10 @@ class _KatalogScreenState extends State<KatalogScreen> {
             decoration: InputDecoration(
               hintText: 'Cari jenis sampah (Misal: Kardus)',
               hintStyle: AppTypography.formHint(),
-              prefixIcon: const Icon(Icons.search, color: AppColors.textPrimary),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.textPrimary,
+              ),
               suffixIcon: _keyword.isEmpty
                   ? null
                   : IconButton(
@@ -833,12 +904,19 @@ class _KatalogScreenState extends State<KatalogScreen> {
                         // Kode badge (P1, C1, K1, Mj, dll.)
                         if (item.kode.isNotEmpty) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: _kodeColor(item.kode).withValues(alpha: 0.12),
+                              color: _kodeColor(
+                                item.kode,
+                              ).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(5),
                               border: Border.all(
-                                color: _kodeColor(item.kode).withValues(alpha: 0.4),
+                                color: _kodeColor(
+                                  item.kode,
+                                ).withValues(alpha: 0.4),
                               ),
                             ),
                             child: Text(
@@ -860,13 +938,18 @@ class _KatalogScreenState extends State<KatalogScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.h3().copyWith(
                               fontSize: 14,
-                              color: isNonaktif ? AppColors.textMuted : AppColors.textPrimary,
+                              color: isNonaktif
+                                  ? AppColors.textMuted
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ),
                         if (_isPengurus)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: isNonaktif
                                   ? Colors.grey.shade300
@@ -878,7 +961,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: isNonaktif ? Colors.grey.shade700 : AppColors.primary,
+                                color: isNonaktif
+                                    ? Colors.grey.shade700
+                                    : AppColors.primary,
                               ),
                             ),
                           ),
@@ -886,7 +971,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.deskripsi.isNotEmpty ? item.deskripsi : 'Sampah terpilah siap daur ulang',
+                      item.deskripsi.isNotEmpty
+                          ? item.deskripsi
+                          : 'Sampah terpilah siap daur ulang',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodySmall(),
@@ -895,7 +982,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                     Text(
                       item.hargaLabel,
                       style: AppTypography.bodyMedium(
-                        color: isNonaktif ? AppColors.textMuted : AppColors.primary,
+                        color: isNonaktif
+                            ? AppColors.textMuted
+                            : AppColors.primary,
                       ).copyWith(fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -920,10 +1009,14 @@ class _KatalogScreenState extends State<KatalogScreen> {
                 TextButton.icon(
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    foregroundColor: isNonaktif ? AppColors.primary : AppColors.warningDark,
+                    foregroundColor: isNonaktif
+                        ? AppColors.primary
+                        : AppColors.warningDark,
                   ),
                   icon: Icon(
-                    isNonaktif ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                    isNonaktif
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded,
                     size: 16,
                   ),
                   label: Text(isNonaktif ? 'Aktifkan' : 'Nonaktifkan'),
@@ -955,7 +1048,11 @@ class _KatalogScreenState extends State<KatalogScreen> {
         color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Icon(Icons.recycling_rounded, color: AppColors.primary, size: 24),
+      child: const Icon(
+        Icons.recycling_rounded,
+        color: AppColors.primary,
+        size: 24,
+      ),
     );
 
     if (item.gambarUrl == null || item.gambarUrl!.isEmpty) {
@@ -990,11 +1087,17 @@ class _KatalogScreenState extends State<KatalogScreen> {
             const SizedBox(height: 12),
             Text(judul, style: AppTypography.h3(), textAlign: TextAlign.center),
             const SizedBox(height: 6),
-            Text(keterangan, style: AppTypography.bodySmall(), textAlign: TextAlign.center),
+            Text(
+              keterangan,
+              style: AppTypography.bodySmall(),
+              textAlign: TextAlign.center,
+            ),
             if (tombolUlang) ...[
               const SizedBox(height: 16),
               FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
                 onPressed: _loadKatalog,
                 child: const Text('Coba Lagi'),
               ),

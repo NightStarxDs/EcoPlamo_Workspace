@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/eco_bottom_nav.dart';
+import '../../widgets/eco_responsive_body.dart';
 
 Color _onGreen([double alpha = 0.85]) => Colors.white.withValues(alpha: alpha);
 
@@ -46,11 +47,7 @@ class _DlhDashboardState extends State<DlhDashboard>
     'co2_reduced_kg': 0,
   };
   List<Map<String, dynamic>> _monitoring = [];
-  Map<String, dynamic> _dataTerkini = {
-    'laporan': 0,
-    'warga': 0,
-    'kategori': 0,
-  };
+  Map<String, dynamic> _dataTerkini = {'laporan': 0, 'warga': 0, 'kategori': 0};
 
   String get _displayName => _isLoadingUser
       ? 'Memuat...'
@@ -165,6 +162,11 @@ class _DlhDashboardState extends State<DlhDashboard>
 
   @override
   Widget build(BuildContext context) {
+    void onNavTap(int index) {
+      HapticFeedback.selectionClick();
+      setState(() => _currentNavIndex = index);
+    }
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -173,41 +175,42 @@ class _DlhDashboardState extends State<DlhDashboard>
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: _loadUserData,
-          child: FadeTransition(
-            opacity: _bodyFade,
-            child: SlideTransition(
-              position: _bodySlide,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
+        body: EcoResponsiveBody(
+          currentIndex: _currentNavIndex,
+          onTap: onNavTap,
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: _loadUserData,
+            child: FadeTransition(
+              opacity: _bodyFade,
+              child: SlideTransition(
+                position: _bodySlide,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.only(bottom: 32),
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 14),
+                    _buildWebPortalBanner(),
+                    const SizedBox(height: 18),
+                    _buildOverviewCard(),
+                    const SizedBox(height: 16),
+                    _buildMonitoringSection(),
+                    const SizedBox(height: 16),
+                    _buildDataSection(),
+                    const SizedBox(height: 16),
+                    _buildActionSection(),
+                  ],
                 ),
-                padding: const EdgeInsets.only(bottom: 32),
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 14),
-                  _buildWebPortalBanner(),
-                  const SizedBox(height: 18),
-                  _buildOverviewCard(),
-                  const SizedBox(height: 16),
-                  _buildMonitoringSection(),
-                  const SizedBox(height: 16),
-                  _buildDataSection(),
-                  const SizedBox(height: 16),
-                  _buildActionSection(),
-                ],
               ),
             ),
           ),
         ),
         bottomNavigationBar: EcoBottomNavBar(
           currentIndex: _currentNavIndex,
-          onTap: (index) {
-            HapticFeedback.selectionClick();
-            setState(() => _currentNavIndex = index);
-          },
+          onTap: onNavTap,
         ),
       ),
     );
@@ -369,11 +372,7 @@ class _DlhDashboardState extends State<DlhDashboard>
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.badge,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
+                    const Icon(Icons.badge, size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
@@ -439,13 +438,16 @@ class _DlhDashboardState extends State<DlhDashboard>
                         children: [
                           Text(
                             'Web Portal DLH',
-                            style: AppTypography.bodyLarge(color: Colors.white).copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: AppTypography.bodyLarge(
+                              color: Colors.white,
+                            ).copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981),
                               borderRadius: BorderRadius.circular(4),
@@ -483,7 +485,10 @@ class _DlhDashboardState extends State<DlhDashboard>
                   try {
                     final canLaunch = await canLaunchUrl(uri);
                     if (canLaunch) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } else {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -498,7 +503,9 @@ class _DlhDashboardState extends State<DlhDashboard>
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('URL Web Dashboard'),
-                                  content: SelectableText(AuthService.getDlhWebUrl()),
+                                  content: SelectableText(
+                                    AuthService.getDlhWebUrl(),
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx),
@@ -532,7 +539,9 @@ class _DlhDashboardState extends State<DlhDashboard>
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
                   ),
                   textStyle: const TextStyle(
                     fontSize: 12,
@@ -569,8 +578,10 @@ class _DlhDashboardState extends State<DlhDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Sistem Monitoring',
-              style: AppTypography.caption(color: _onGreen())),
+          Text(
+            'Sistem Monitoring',
+            style: AppTypography.caption(color: _onGreen()),
+          ),
           const SizedBox(height: 4),
           Text(
             'DLH & Lingkungan',
@@ -616,17 +627,13 @@ class _DlhDashboardState extends State<DlhDashboard>
           children: [
             Icon(icon, size: 20, color: iconColor),
             const SizedBox(height: 6),
-            Text(
-              value,
-              style: AppTypography.h2(color: Colors.white),
-            ),
+            Text(value, style: AppTypography.h2(color: Colors.white)),
             const SizedBox(height: 2),
             Text(
               label,
-              style: AppTypography.caption(color: Colors.white).copyWith(
-                fontWeight: FontWeight.w500,
-                fontSize: 10,
-              ),
+              style: AppTypography.caption(
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w500, fontSize: 10),
             ),
           ],
         ),
@@ -640,10 +647,7 @@ class _DlhDashboardState extends State<DlhDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader(
-            'Monitoring Lingkungan',
-            icon: Icons.monitor,
-          ),
+          _sectionHeader('Monitoring Lingkungan', icon: Icons.monitor),
           const SizedBox(height: 12),
           Container(
             decoration: _cardDecoration(),
@@ -664,15 +668,15 @@ class _DlhDashboardState extends State<DlhDashboard>
                           icon: m['title'].toString().contains('Air')
                               ? Icons.water_drop
                               : (m['title'].toString().contains('Daur')
-                                  ? Icons.recycling_rounded
-                                  : Icons.eco),
+                                    ? Icons.recycling_rounded
+                                    : Icons.eco),
                           title: m['title'] ?? '',
                           status: m['status'] ?? '',
                           color: m['color'] == 'accentDark'
                               ? AppColors.accentDark
                               : (m['color'] == 'warningDark'
-                                  ? AppColors.warningDark
-                                  : AppColors.primary),
+                                    ? AppColors.warningDark
+                                    : AppColors.primary),
                         ),
                     ],
                   ),
@@ -713,10 +717,7 @@ class _DlhDashboardState extends State<DlhDashboard>
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  status,
-                  style: AppTypography.caption(),
-                ),
+                Text(status, style: AppTypography.caption()),
               ],
             ),
           ),
@@ -728,10 +729,9 @@ class _DlhDashboardState extends State<DlhDashboard>
             ),
             child: Text(
               status,
-              style: AppTypography.caption(color: color).copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 10,
-              ),
+              style: AppTypography.caption(
+                color: color,
+              ).copyWith(fontWeight: FontWeight.w700, fontSize: 10),
             ),
           ),
         ],
@@ -745,10 +745,7 @@ class _DlhDashboardState extends State<DlhDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader(
-            'Data Terkini',
-            icon: Icons.table_chart_rounded,
-          ),
+          _sectionHeader('Data Terkini', icon: Icons.table_chart_rounded),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -796,26 +793,20 @@ class _DlhDashboardState extends State<DlhDashboard>
               label,
               style: AppTypography.caption(color: AppColors.textSecondary),
             ),
-            Text(
-              count,
-              style: AppTypography.h3(color: AppColors.textPrimary),
-            ),
+            Text(count, style: AppTypography.h3(color: AppColors.textPrimary)),
           ],
         ),
         onPressed: () {
           HapticFeedback.lightImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Fitur $label')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Fitur $label')));
         },
       ),
     );
   }
 
-  Widget _sectionHeader(
-    String title, {
-    IconData? icon,
-  }) {
+  Widget _sectionHeader(String title, {IconData? icon}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
       child: Row(
@@ -833,9 +824,7 @@ class _DlhDashboardState extends State<DlhDashboard>
             ),
             const SizedBox(width: 10),
           ],
-          Expanded(
-            child: Text(title, style: AppTypography.h3()),
-          ),
+          Expanded(child: Text(title, style: AppTypography.h3())),
         ],
       ),
     );
@@ -891,9 +880,9 @@ class _DlhDashboardState extends State<DlhDashboard>
       borderRadius: BorderRadius.circular(12),
       onTap: () {
         HapticFeedback.lightImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Aksi: $label')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Aksi: $label')));
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
