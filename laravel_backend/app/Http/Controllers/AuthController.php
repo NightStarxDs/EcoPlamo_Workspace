@@ -63,20 +63,18 @@ class AuthController extends Controller
 
             Warga::create([
                 'id_pengguna' => $user->id_pengguna,
+                'tipe_hunian' => $request->tipe_hunian,
                 'alamat' => $request->alamat,
+                'nomor_hunian' => $request->nomor_hunian,
+                'total_saldo' => 0,
                 'status_verifikasi' => 'menunggu',
                 'nomor_tiket' => $nomorTiket,
                 'uang_pendaftaran' => 10000.00,
                 'status_pembayaran' => 'belum_lunas',
             ]);
 
-                Warga::create([
-                    'id_pengguna' => $user->id_pengguna,
-                    'tipe_hunian' => $request->tipe_hunian,
-                    'alamat' => $request->alamat,
-                    'nomor_hunian' => $request->nomor_hunian,
-                    'total_saldo' => 0,
-                ]);
+            return $user;
+        });
 
         $warga = $user->warga;
         $nomorTiket = $warga->nomor_tiket ?? ('REG-' . date('Ymd') . '-' . str_pad($user->id_pengguna, 4, '0', STR_PAD_LEFT));
