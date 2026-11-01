@@ -315,4 +315,121 @@ class AuthService {
       await _remove(_keyUser);
     }
   }
+
+  // ── Helper: authenticated GET/POST ────────────────────────────────────────
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  /// Ambil data dashboard pengurus (overview, aktivitas, statistik_kategori).
+  Future<Map<String, dynamic>?> getPengurusDashboard() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/pengurus/dashboard'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Pengurus: Verifikasi Warga ─────────────────────────────────────────────
+
+  /// GET /api/pengurus/verifikasi-warga?status=&search=
+  Future<Map<String, dynamic>> getDaftarVerifikasi({
+    String status = 'menunggu',
+    String search = '',
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final uri = Uri.parse('$baseUrl/pengurus/verifikasi-warga').replace(
+        queryParameters: {
+          'status': status,
+          if (search.isNotEmpty) 'search': search,
+        },
+      );
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'counts': data['counts'] ?? {},
+          'data': (data['data'] as List<dynamic>)
+              .map((e) => e as Map<String, dynamic>)
+              .toList(),
+        };
+      }
+      return {'success': false, 'message': data['message'] ?? 'Gagal memuat data.'};
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  /// POST /api/pengurus/verifikasi-warga/{id}/setujui
+  Future<Map<String, dynamic>> setujuiWarga(
+    int idPengguna, {
+    double uangPendaftaran = 10000,
+    String catatan = '',
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pengurus/verifikasi-warga/$idPengguna/setujui'),
+            headers: headers,
+            body: jsonEncode({
+              'uang_pendaftaran': uangPendaftaran,
+              if (catatan.isNotEmpty) 'catatan': catatan,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return {
+        'success': data['success'] == true,
+        'message': data['message'] ?? (data['success'] == true ? 'Berhasil.' : 'Gagal.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  /// POST /api/pengurus/verifikasi-warga/{id}/tolak
+  Future<Map<String, dynamic>> tolakWarga(
+    int idPengguna, {
+    required String alasan,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pengurus/verifikasi-warga/$idPengguna/tolak'),
+            headers: headers,
+            body: jsonEncode({'alasan': alasan}),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return {
+        'success': data['success'] == true,
+        'message': data['message'] ?? (data['success'] == true ? 'Berhasil.' : 'Gagal.'),
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
 }
