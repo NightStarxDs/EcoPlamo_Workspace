@@ -16,6 +16,7 @@ class Pengumuman extends Model
     protected $fillable = [
         'id_pengurus',
         'judul',
+        'kategori',
         'isi',
         'created_at',
     ];
