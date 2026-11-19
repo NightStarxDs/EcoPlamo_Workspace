@@ -73,7 +73,29 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B);
   static const Color info = figmaFocus; // #0095FF
 
+  // Canonical Handoff v2 Tokens
+  static const Color heroFrom = figmaHeroFrom; // #00573B
+  static const Color heroTo = figmaHeroTo; // #006544
+  static const Color sun = Color(0xFFFFD84D); // #FFD84D (Usulan, hanya isian)
+  static const Color link = figmaLink; // #115E39
+  static const Color focus = figmaFocus; // #0095FF
+  static const Color line = figmaLine; // #E5E7EB
+
   // Varian gelap status
   static const Color warningDark = Color(0xFFB45309);
   static const Color infoDark = Color(0xFF1D4ED8);
+}
+
+/// Sesuai DESIGN_SYSTEM.md (v2) Bagian 4.2 & 11.1
+class AppRadius {
+  static const double input = 10.0;
+  static const double card = 16.0;
+  static const double formCard = 20.0;
+  static const double hero = 30.0;
+  static const BorderRadius leaf = BorderRadius.only(
+    topLeft: Radius.circular(20),
+    topRight: Radius.circular(4),
+    bottomRight: Radius.circular(20),
+    bottomLeft: Radius.circular(4),
+  );
 }

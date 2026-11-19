@@ -14,14 +14,14 @@ Route::get('/tes-koneksi', function () {
     ]);
 });
 
-// Authentication routes
+// Authentication routes (Public)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Katalog harga sampah
+// Katalog harga sampah (Public read)
 Route::get('/katalog', [KatalogController::class, 'index']);
 
-// Informasi & Pengumuman posko
+// Informasi & Pengumuman posko (Public read)
 Route::get('/pengumuman', function () {
     $pengumuman = \App\Models\Pengumuman::orderByDesc('created_at')->get()->map(function ($p) {
         $kategori = 'Pengumuman';
@@ -47,15 +47,54 @@ Route::get('/pengumuman', function () {
     ]);
 });
 
-
+// Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/profile/update', [AuthController::class, 'updateProfile']);
+    Route::post('/profile/change-password', [AuthController::class, 'changePassword']);
 
-    // ── Pengurus: Verifikasi Warga ──────────────────────────────────────────
+    // ── Pengurus Routes ───────────────────────────────────────────────────────
     Route::prefix('pengurus')->group(function () {
+        Route::get('/dashboard', [PengurusController::class, 'dashboard']);
         Route::get('/verifikasi-warga', [PengurusController::class, 'getDaftarVerifikasi']);
         Route::post('/verifikasi-warga/{id}/setujui', [PengurusController::class, 'setujuiWarga']);
         Route::post('/verifikasi-warga/{id}/tolak', [PengurusController::class, 'tolakWarga']);
+        Route::get('/warga-list', [PengurusController::class, 'wargaList']);
+        Route::get('/warga-search', [PengurusController::class, 'wargaSearch']);
+        Route::post('/setoran', [PengurusController::class, 'catatSetoran']);
+        Route::get('/pencairan', [PengurusController::class, 'pencairanList']);
+        Route::post('/pencairan/{id}/validasi', [PengurusController::class, 'validasiPencairan']);
+        Route::get('/pengaturan-pencairan', [PengurusController::class, 'getPengaturanPencairan']);
+        Route::post('/pengaturan-pencairan', [PengurusController::class, 'simpanPengaturanPencairan']);
+        Route::get('/laporan', [PengurusController::class, 'laporanRekap']);
+        Route::post('/pengumuman', [PengurusController::class, 'buatPengumuman']);
+        Route::delete('/pengumuman/{id}', [PengurusController::class, 'hapusPengumuman']);
+        Route::post('/katalog', [KatalogController::class, 'store']);
+        Route::put('/katalog/{id}', [KatalogController::class, 'update']);
+        Route::post('/katalog/{id}/toggle-status', [KatalogController::class, 'toggleStatus']);
+        Route::delete('/katalog/{id}', [KatalogController::class, 'destroy']);
     });
+
+    // Top-level aliases for service compatibility
+    Route::get('/warga/search', [PengurusController::class, 'wargaSearch']);
+    Route::post('/setoran', [PengurusController::class, 'catatSetoran']);
+    Route::get('/pencairan', [PengurusController::class, 'pencairanList']);
+    Route::post('/pencairan/{id}/validasi', [PengurusController::class, 'validasiPencairan']);
+    Route::post('/pengumuman', [PengurusController::class, 'buatPengumuman']);
+    Route::delete('/pengumuman/{id}', [PengurusController::class, 'hapusPengumuman']);
+    Route::post('/katalog', [KatalogController::class, 'store']);
+    Route::put('/katalog/{id}', [KatalogController::class, 'update']);
+    Route::post('/katalog/{id}/toggle-status', [KatalogController::class, 'toggleStatus']);
+    Route::delete('/katalog/{id}', [KatalogController::class, 'destroy']);
+
+    // ── Warga Routes ──────────────────────────────────────────────────────────
+    Route::get('/warga/dashboard', [WargaController::class, 'dashboard']);
+    Route::post('/warga/pencairan', [WargaController::class, 'ajukanPencairan']);
+    Route::get('/warga/mutasi', [WargaController::class, 'mutasiSaldo']);
+
+    // ── DLH Routes ────────────────────────────────────────────────────────────
+    Route::get('/dlh/dashboard', [DlhController::class, 'dashboard']);
+    Route::get('/dlh/verifikasi', [DlhController::class, 'verifikasiList']);
+    Route::post('/dlh/verifikasi', [DlhController::class, 'simpanVerifikasi']);
 });
