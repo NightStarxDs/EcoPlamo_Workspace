@@ -7,7 +7,9 @@ import '../../widgets/eco_bottom_nav.dart';
 import '../../widgets/eco_responsive_body.dart';
 import 'catat_setoran_screen.dart';
 import 'kelola_pencairan_screen.dart';
+import 'pengaturan_pencairan_sheet.dart';
 import 'verifikasi_warga_screen.dart';
+import '../info/info_screen.dart';
 
 // =============================================================================
 // ATURAN AKSESIBILITAS / KETERBACAAN YANG DIPAKAI (sama dengan WargaDashboard)
@@ -614,14 +616,14 @@ class _PengurusDashboardState extends State<PengurusDashboard>
             'Manajemen Saldo & Pencairan',
             icon: Icons.tune_rounded,
           ),
-          // Row 1: Pengaturan + Validasi Pencairan
+          // Row 1: Pengaturan Pencairan + Validasi Pencairan
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _manageTile(
-                  icon: Icons.rule_rounded,
-                  label: 'Pengaturan Pencairan',
+                  icon: Icons.tune_rounded,
+                  label: 'Aturan Pencairan',
                   onPressed: () {
                     HapticFeedback.lightImpact();
                     _showPengaturanPencairanModal();
@@ -646,21 +648,41 @@ class _PengurusDashboardState extends State<PengurusDashboard>
             ),
           ),
           const SizedBox(height: 12),
-          // Row 2: Verifikasi Warga (full width)
-          _manageTile(
-            icon: Icons.how_to_reg_rounded,
-            label: 'Verifikasi Warga Baru',
-            badge: _wargaMenungguVerifikasi,
-            fullWidth: true,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const VerifikasiWargaScreen(),
+          // Row 2: Pengumuman Posko + Verifikasi Warga Baru
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _manageTile(
+                  icon: Icons.campaign_rounded,
+                  label: 'Pengumuman Posko',
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const InfoScreen(),
+                      ),
+                    ).then((_) => _loadUserData());
+                  },
                 ),
-              ).then((_) => _loadUserData());
-            },
+                const SizedBox(width: 12),
+                _manageTile(
+                  icon: Icons.how_to_reg_rounded,
+                  label: 'Verifikasi Warga',
+                  badge: _wargaMenungguVerifikasi,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const VerifikasiWargaScreen(),
+                      ),
+                    ).then((_) => _loadUserData());
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1028,440 +1050,11 @@ class _PengurusDashboardState extends State<PengurusDashboard>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _PengaturanPencairanSheet(authService: _authService),
+      builder: (_) => PengaturanPencairanSheet(authService: _authService),
     );
     if (message != null && mounted) {
       _snack(message);
       _loadUserData();
     }
-  }
-}
-
-// =============================================================================
-// Bottom sheet sebagai StatefulWidget sendiri.
-//
-// Versi lama memanggil FutureBuilder(future: getPengaturanPencairan()) dan
-// membuat TextEditingController DI DALAM builder. Builder route dijalankan
-// ulang saat keyboard muncul (MediaQuery.viewInsets berubah) -> data diambil
-// ulang, spinner muncul lagi, dan teks yang sedang diketik HILANG. Controller
-// juga tidak pernah di-dispose. Di sini: fetch sekali di initState, controller
-// dimiliki State, dan dibuang di dispose().
-// =============================================================================
-class _PengaturanPencairanSheet extends StatefulWidget {
-  final AuthService authService;
-  const _PengaturanPencairanSheet({required this.authService});
-
-  @override
-  State<_PengaturanPencairanSheet> createState() =>
-      _PengaturanPencairanSheetState();
-}
-
-class _PengaturanPencairanSheetState extends State<_PengaturanPencairanSheet> {
-  final TextEditingController _minCtrl = TextEditingController();
-  final TextEditingController _mulaiCtrl = TextEditingController();
-  final TextEditingController _selesaiCtrl = TextEditingController();
-  DateTime? _mulai;
-  DateTime? _selesai;
-
-  bool _loading = true;
-  bool _loadFailed = false;
-  bool _saving = false;
-  String? _saveError;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _minCtrl.dispose();
-    _mulaiCtrl.dispose();
-    _selesaiCtrl.dispose();
-    super.dispose();
-  }
-
-  void _setMulai(DateTime d) {
-    _mulai = d;
-    _mulaiCtrl.text = _fmtTanggal(d);
-  }
-
-  void _setSelesai(DateTime d) {
-    _selesai = d;
-    _selesaiCtrl.text = _fmtTanggal(d);
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _loadFailed = false;
-    });
-    try {
-      final data = await widget.authService.getPengaturanPencairan();
-      if (!mounted) return;
-      final now = DateTime.now();
-      final min = (data['target_minimal'] as num?)?.toInt() ?? 50000;
-      setState(() {
-        _minCtrl.text = min.toString();
-        // Fallback = bulan berjalan (sebelumnya tanggal hardcode 2026-10-01/31).
-        _setMulai(
-          DateTime.tryParse(data['tanggal_mulai']?.toString() ?? '') ??
-              DateTime(now.year, now.month, 1),
-        );
-        _setSelesai(
-          DateTime.tryParse(data['tanggal_selesai']?.toString() ?? '') ??
-              DateTime(now.year, now.month + 1, 0),
-        );
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _loadFailed = true;
-      });
-    }
-  }
-
-  // ---- Validasi inline (WCAG 3.3.1) ----------------------------------------
-  int? get _nominal => int.tryParse(_minCtrl.text.trim());
-
-  String? get _nominalError {
-    if (_minCtrl.text.trim().isEmpty) return 'Wajib diisi';
-    final n = _nominal;
-    if (n == null || n < 5000) return 'Minimal Rp 5.000';
-    return null;
-  }
-
-  String? get _tanggalError {
-    if (_mulai != null && _selesai != null && _selesai!.isBefore(_mulai!)) {
-      return 'Tanggal selesai harus sama dengan atau setelah tanggal mulai';
-    }
-    return null;
-  }
-
-  bool get _canSave =>
-      !_saving &&
-      _mulai != null &&
-      _selesai != null &&
-      _nominalError == null &&
-      _tanggalError == null;
-
-  Future<void> _pickDate({required bool isMulai}) async {
-    final initial = (isMulai ? _mulai : _selesai) ?? DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      helpText: isMulai ? 'Pilih tanggal mulai' : 'Pilih tanggal selesai',
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      if (isMulai) {
-        _setMulai(picked);
-      } else {
-        _setSelesai(picked);
-      }
-    });
-  }
-
-  Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _saveError = null;
-    });
-    HapticFeedback.mediumImpact();
-    try {
-      final res = await widget.authService.simpanPengaturanPencairan(
-        targetMinimal: _nominal!.toDouble(),
-        tanggalMulai: _iso(_mulai!),
-        tanggalSelesai: _iso(_selesai!),
-      );
-      if (!mounted) return;
-      if (res['success'] == true) {
-        Navigator.pop(
-          context,
-          res['message']?.toString() ?? 'Pengaturan pencairan tersimpan.',
-        );
-      } else {
-        // Sheet tetap terbuka: input pengurus tidak hilang, pesan tidak lenyap.
-        setState(() {
-          _saving = false;
-          _saveError =
-              res['message']?.toString() ?? 'Gagal menyimpan pengaturan.';
-        });
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _saveError =
-            'Gagal menyimpan pengaturan. Periksa koneksi lalu coba lagi.';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors
-                        .border, // 3.3:1 (sebelumnya grey.shade300 ≈1.5:1)
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.rule_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            'Pengaturan Pencairan',
-                            style: AppTypography.h3(),
-                          ),
-                        ),
-                        Text(
-                          'Tentukan batas minimal saldo & periode klaim warga',
-                          style: AppTypography.caption(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (_loading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      semanticsLabel: 'Memuat pengaturan pencairan',
-                    ),
-                  ),
-                )
-              else if (_loadFailed)
-                _buildLoadFailed()
-              else
-                ..._buildForm(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadFailed() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _messageBox(
-          icon: Icons.error_outline_rounded,
-          iconColor: AppColors.error,
-          text: 'Pengaturan pencairan gagal dimuat.',
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded, size: 20),
-            label: const Text('Coba Lagi'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Kotak pesan: ikon + teks gelap (≈16:1). Tidak mengandalkan teks merah di
-  /// atas tint merah (≈4.5:1, terlalu mepet).
-  Widget _messageBox({
-    required IconData icon,
-    required Color iconColor,
-    required String text,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: iconColor.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTypography.bodyMedium(
-                color: AppColors.textPrimary,
-              ).copyWith(height: 1.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildForm() {
-    return [
-      // Label permanen via labelText (terhubung ke field untuk screen reader),
-      // border/fokus/galat diwarisi dari AppTheme.inputDecorationTheme.
-      TextField(
-        controller: _minCtrl,
-        keyboardType: TextInputType.number,
-        textInputAction: TextInputAction.done,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        enabled: !_saving,
-        onChanged: (_) => setState(() {}),
-        style: AppTypography.h3(),
-        decoration: InputDecoration(
-          labelText: 'Target minimal saldo pencairan',
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          prefixText: 'Rp  ',
-          prefixStyle: AppTypography.h3(color: AppColors.primary),
-          hintText: 'Contoh: 50000',
-          errorText: _nominalError,
-        ),
-      ),
-      const SizedBox(height: 20),
-      // Pemilih tanggal menggantikan ketik manual "YYYY-MM-DD" (pencegahan galat,
-      // Nielsen #5) dan field disusun vertikal agar tanggal tidak terpotong.
-      TextField(
-        controller: _mulaiCtrl,
-        readOnly: true,
-        enabled: !_saving,
-        onTap: () => _pickDate(isMulai: true),
-        style: AppTypography.h3(),
-        decoration: const InputDecoration(
-          labelText: 'Tanggal mulai',
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          hintText: 'Pilih tanggal',
-          suffixIcon: Icon(
-            Icons.calendar_today_outlined,
-            color: AppColors.primary,
-          ),
-        ),
-      ),
-      const SizedBox(height: 20),
-      TextField(
-        controller: _selesaiCtrl,
-        readOnly: true,
-        enabled: !_saving,
-        onTap: () => _pickDate(isMulai: false),
-        style: AppTypography.h3(),
-        decoration: InputDecoration(
-          labelText: 'Tanggal selesai',
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          hintText: 'Pilih tanggal',
-          suffixIcon: const Icon(
-            Icons.calendar_today_outlined,
-            color: AppColors.primary,
-          ),
-          errorText: _tanggalError,
-          errorMaxLines: 3,
-        ),
-      ),
-      const SizedBox(height: 20),
-      Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.info_outline_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Warga hanya dapat mengajukan klaim jika saldo tabungannya telah mencapai atau melampaui target minimal yang ditetapkan.',
-                // Penjelasan aturan = isi penting -> 14sp, line-height 1.5, 8.4:1.
-                style: AppTypography.bodyMedium(
-                  color: AppColors.textSecondary,
-                ).copyWith(height: 1.5),
-              ),
-            ),
-          ],
-        ),
-      ),
-      if (_saveError != null) ...[
-        const SizedBox(height: 16),
-        Semantics(
-          liveRegion: true, // dibacakan otomatis oleh screen reader
-          child: _messageBox(
-            icon: Icons.error_outline_rounded,
-            iconColor: AppColors.error,
-            text: _saveError!,
-          ),
-        ),
-      ],
-      const SizedBox(height: 20),
-      SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: _canSave ? _save : null,
-          child: _saving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                    semanticsLabel: 'Menyimpan',
-                  ),
-                )
-              : const Text('Simpan Aturan Pencairan'),
-        ),
-      ),
-    ];
   }
 }

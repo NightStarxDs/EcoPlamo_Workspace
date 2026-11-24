@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import 'pengaturan_pencairan_sheet.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────
 ///  Layar Kelola Pencairan Saldo – Pengurus RT/RW
@@ -164,6 +165,28 @@ class _KelolaPencairanScreenState extends State<KelolaPencairanScreen>
         title: Text('Kelola Pencairan', style: AppTypography.h2(color: Colors.white)),
         systemOverlayStyle: SystemUiOverlayStyle.light,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            tooltip: 'Aturan & Batas Pencairan',
+            onPressed: () async {
+              final msg = await showModalBottomSheet<String>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => PengaturanPencairanSheet(authService: _api),
+              );
+              if (msg != null && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: AppColors.accentGreen,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                _loadData();
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Muat ulang',
