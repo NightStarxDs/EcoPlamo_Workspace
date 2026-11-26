@@ -56,29 +56,33 @@ class EcoTextField extends StatelessWidget {
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 14,
+              vertical: 13,
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.background,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderFocused, width: 1.5),
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              borderSide: const BorderSide(color: AppColors.focus, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.error, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+            ),
+            errorStyle: const TextStyle(
+              color: AppColors.error,
+              fontSize: 12,
             ),
           ),
         ),

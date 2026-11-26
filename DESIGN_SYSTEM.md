@@ -1,220 +1,451 @@
-# 🌿 Eco Plamo — Design System & UI/UX Guidelines
-> **Master Specification**: Blending Starbucks Retail Warmth, Modern Circular Economy Identity, and Taste-Skill Anti-Slop Art Direction.  
-> **Target Platforms**: Mobile Application (Flutter) & Administrative Web Portal (HTML5 / Vanilla CSS).  
-> **Source Project**: Proyek PBL Bank Sampah Digital — Politeknik Negeri Batam.
+# Eco Plamo — DESIGN.md (v2)
+
+> **Tema:** Minimalis, ringan, dan bertumbuh. Bersih seperti kertas, hijau seperti daun, dengan sedikit kejutan kecil yang bikin senyum.
+> **Platform:** Aplikasi mobile (Flutter) dan portal web (HTML/CSS).
+> **Proyek:** PBL Bank Sampah Digital, Politeknik Negeri Batam.
 
 ---
 
-## 1. Visual Theme & Brand Philosophy
+## 0. Sumber kebenaran
 
-Eco Plamo mengadopsi filosofi desain **Warm, Grounded Eco-Flagship**:
-- **Bukan Putih Dingin / Sterile**: Menggantikan latar belakang putih klinis (`#ffffff`) dengan spektrum kanvas *Warm Neutral* krem dan keramik (`#F7F5F0` & `#EFECE6`), terinspirasi dari kehangatan signage café Starbucks dan bahan kertas daur ulang ramah lingkungan.
-- **Rhythm Color-Block**: Kontras yang tegas dan elegan antara kanvas krem hangat, kartu konten putih bersih bersudut lembut (*soft rounded*), dan blok statement *House Green* gelap pekat (`#1E3932`) yang berwibawa.
-- **Upacara Emas (Gold Ceremony)**: Aksen emas kustom (`#CBA258`) dikunci hanya untuk momen selebrasi pencapaian, peringkat warga di *Plamo Garden*, dan lencana kontributor terbaik — tidak pernah diobral sebagai aksen tombol umum.
-- **Micro-Interactions Taktil**: Tombol aksi berbentuk *full-pill* (`50px`), kartu dengan elevasi *whisper shadow* berlapis, dan umpan balik sentuhan fisik (*press compression* `scale(0.97)`) yang memuaskan dan responsif.
+Urutan acuan kalau ada nilai yang berbeda:
 
----
+1. **Dokumen Design Handoff v1.0 (25 Okt 2026)** dan mockup Figma. Semua token di dokumen ini mengikuti keduanya.
+2. **Usulan** (bagian 12). Belum berlaku sampai disetujui Product Manager.
+3. **Inspirasi Starbucks.** Hanya perilaku dan pola, bukan token (lihat 1.2).
 
-## 2. Palet Warna Terkalibrasi (Calibrated Color System)
-
-Sistem warna multi-tier yang presisi, dipetakan untuk token Flutter (`Color(0xFF...)`) dan Web CSS variables (`--color-...`).
-
-### 2.1. Palet Resmi Figma Handoff (Sumber Google Drive)
-Berdasarkan dokumen resmi `Color Pallete (Eco-Plamo-05-Colors.png)` & `Color Pallete Contras.png`:
-
-| Kategori | Token Figma | Nilai Hex | Peran & Penggunaan Desain |
-| :--- | :--- | :--- | :--- |
-| **Primary** | `primary` | `#005E3F` | **Warna Utama Aplikasi**. Header brand, ikon aktif, tombol utama. |
-| **Primary** | `primary-hover` | `#00422D` | State hover tombol primer di desktop/web. |
-| **Primary** | `primary-dark` | `#005136` | Lencana (badge) dan aksen gelap terkalibrasi. |
-| **Gradasi Hero** | `hero-from` | `#00573B` | Titik awal gradasi kartu hero saldo (*Pocket Card*). |
-| **Gradasi Hero** | `hero-to` | `#006544` | Titik akhir gradasi kartu hero saldo. |
-| **Background** | `background` | `#F9FAFB` | Latar belakang seluruh halaman (*Screen Background*). |
-| **Surface** | `surface` | `#F6FAF7` | Container menu bar bawah & latar ikon. |
-| **Surface** | `header` | `#FAFAFA` | Container top bar header. |
-| **Surface** | `chip-selesai` | `#E8F7F1` | Background chip status selesai & tag kategori aktif. |
-| **Divider** | `line` | `#E5E7EB` | Garis pemisah (*divider*) dan border card tipis. |
-| **Teks** | `text-primary` | `#111827` | Teks judul utama & input field (Kontras 16:1 WCAG AAA). |
-| **Teks** | `text-secondary`| `#414B45` | Teks keterangan, subtitle, form label (Kontras 8.4:1). |
-| **Border** | `border-input` | `#77857D` | Border outline kolom input formulir (Kontras 3.3:1). |
-| **Navigasi** | `nav-inactive` | `#26302B` | Ikon & label menu navigasi yang tidak aktif. |
-| **Aksen** | `accent` | `#B0F0D6` | Bar indikator progress target setoran sampah. |
-| **Aksen** | `link` | `#115E39` | Tautan interaktif, angka nominal penambahan saldo (+Rp). |
-| **State** | `disabled` | `#E1E4E3` | Elemen tombol atau input nonaktif. |
-| **State** | `focus` | `#0095FF` | Outline ring state fokus aksesibilitas. |
-| **Danger** | `error` | `#A31515` | Status penolakan, tombol batal, peringatan galat. |
-
-### 2.2. Harmonisasi Multi-Tier Starbucks & Retail Flagship
-Diintegrasikan agar aplikasi memiliki kehangatan dan kedalaman kelas retail Starbucks:
-- **House Green (`#1E3932`)**: Dipadukan dengan `#00573B` -> `#006544` untuk kartu saldo tabungan (*statement card*) agar terlihat kokoh dan berwibawa.
-- **Accent Green (`#00754A`)**: Varian luminous untuk tombol aksi *full-pill* (`50px`) dan floating circular scan button (*The Plamo Frap*).
-- **Prestige Gold (`#CBA258` / `#FAF6EE`)**: Khusus momen gamifikasi *Plamo Garden* (medali peringkat 1, status tier kontributor emas, dan bintang reward).
-- **Warm Canvas Tints (`#F7F5F0` & `#EFECE6`)**: Memberi alternatif tekstur kertas hangat ramah lingkungan untuk kartu-kartu informatif.
-
-### 2.2. Warm Canvas & Surfaces (Latar Belakang & Bidang Kartu)
-| Token Name | Hex Code | Flutter Value | Peran & Penggunaan UI |
-| :--- | :--- | :--- | :--- |
-| **Canvas Warm** | `#F7F5F0` | `Color(0xFFF7F5F0)` | Latar belakang dasar seluruh layar (*Screen Background*). Lembut di mata dan hangat. |
-| **Surface Ceramic** | `#EFECE6` | `Color(0xFFEFECE6)` | Separator zona, background container input form, search bar wrap, dan utility banner. |
-| **Surface White** | `#FFFFFF` | `Color(0xFFFFFFFF)` | Kartu interaktif, dialog modal, bottom sheet, dan popup menu. Memberi *visual pop* di atas kanvas krem. |
-| **Surface Cool Neutral** | `#F9F9F9` | `Color(0xFFF9F9F9)` | Latar container dropdown, baris riwayat berselang-seling, dan utility wrap. |
-
-### 2.3. Rewards & Prestige Gold (Eksklusif Gamifikasi)
-| Token Name | Hex Code | Flutter Value | Peran & Penggunaan UI |
-| :--- | :--- | :--- | :--- |
-| **Prestige Gold** | `#CBA258` | `Color(0xFFCBA258)` | Khusus bintang poin, medali klasemen *Plamo Garden*, status tier warga teladan, dan voucher reward. |
-| **Gold Light Tint** | `#FAF6EE` | `Color(0xFFFAF6EE)` | Background kartu penghargaan, highlight banner peringkat top kontributor posko. |
-
-### 2.4. Tipografi & Kontras Teks (Typography Readability)
-| Token Name | Nilai RGBA / Hex | Peran & Penggunaan UI |
-| :--- | :--- | :--- |
-| **Text Primary Ink** | `rgba(0, 0, 0, 0.87)` / `#1E1E1E` | Teks judul utama, angka saldo besar, teks label input pada latar terang. |
-| **Text Secondary Slate**| `rgba(0, 0, 0, 0.58)` / `#5F6368` | Subtitle, tanggal riwayat, hint form, satuan kg/liter pada katalog. |
-| **Text On Dark Hero** | `rgba(255, 255, 255, 1.0)` | Seluruh judul & teks di atas kartu House Green pekat atau Brand Emerald. |
-| **Text On Dark Muted**| `rgba(255, 255, 255, 0.72)` | Subtitle keterangan saldo, nomor referensi di layar gelap. |
-
-### 2.5. Status Semantik Operasional
-| Token Name | Hex Code | Flutter Value | Peran & Penggunaan UI |
-| :--- | :--- | :--- | :--- |
-| **Success Mint** | `#10B981` | `Color(0xFF10B981)` | Nominal masuk setoran (+Rp / +Kg), status badge "Selesai", verifikasi disetujui. |
-| **Warning Amber** | `#F59E0B` | `Color(0xFFF59E0B)` | Status "Diproses", pengingat minimal penarikan (Rp 50.000), peringatan posko tutup. |
-| **Destructive Red** | `#C82014` | `Color(0xFFC82014)` | Validasi error input, status "Dibatalkan", tombol aksi "Tolak Setoran" / "Keluar Akun". |
-| **Red Wash Tint** | `rgba(200, 32, 20, 0.06)` | `Color(0x0FC82014)` | Background input state error & alert destructive container. |
+Aturan praktis: jangan menambah warna, radius, atau ukuran huruf baru tanpa mencatatnya di bagian 12.
 
 ---
 
-## 3. Fondasi Tipografi (Typography Hierarchy)
+## 1. Filosofi: Bersih, Ringan, Bertumbuh
 
-Disiplin tipografi ganda: **Poppins** untuk struktur judul tegas yang ramah (*editorial friendly*), dan **Plus Jakarta Sans** untuk kenyamanan membaca konten, angka saldo, dan form.
+### 1.1. Tiga prinsip
 
-> [!NOTE]
-> Semua *letter-spacing* judul dikalibrasi ketat pada `-0.01em` hingga `-0.16px` untuk menghilangkan kesan teks renggang dan menghadirkan impresi premium seperti tipografi Starbucks SoDoSans.
+1. **Minimalis dulu.** Satu elemen utama per layar, ruang kosong lapang, satu warna aksen. Hierarki dibuat dengan ukuran dan ketebalan huruf, bukan dengan warna atau garis tambahan.
+2. **Fun di momen yang tepat.** Kejutan kecil hanya muncul di saat kosong, berhasil, memuat, dan naik peringkat. Tidak pernah di formulir, nominal uang, atau pesan error.
+3. **Tumbuh sebagai metafora.** Setoran sampah membuat sesuatu tumbuh: bibit, tunas, pohon. Metafora ini dipakai di progres, peringkat, dan ilustrasi.
 
-| Level Hirarki | Font Family | Weight | Ukuran (sp / rem) | Line Height | Tracking | Penggunaan Utama |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display Hero** | `Poppins` | Bold (700) | 28sp / 1.75rem | 1.2 | -0.16px | Splash brand title, nominal saldo utama pada Pocket Card |
-| **Heading 1** | `Poppins` | Bold (700) | 24sp / 1.5rem | 1.3 | -0.16px | Header halaman Auth, "Pengajuan Berhasil!", Ringkasan DLH |
-| **Heading 2** | `Poppins` | SemiBold (600) | 20sp / 1.25rem | 1.3 | -0.16px | Judul dialog konfirmasi pencairan, header riwayat mutasi |
-| **Heading 3** | `Poppins` | SemiBold (600) | 16sp / 1.0rem | 1.4 | -0.01em | Sub-header section: "Klasemen Plamo Garden", "Detail Setoran" |
-| **Body Large** | `Plus Jakarta Sans` | Medium (500) | 15sp / 0.938rem | 1.5 | normal | Kalimat pembuka hero, teks deskripsi panduan posko |
-| **Body Medium** | `Plus Jakarta Sans` | Regular (400) | 13-14sp / 0.875rem | 1.5 | normal | Konten artikel berita posko, form label, deskripsi katalog sampah |
-| **Body Small / Meta** | `Plus Jakarta Sans` | Regular (400) | 11-12sp / 0.75rem | 1.4 | normal | Timestamp riwayat, nomor seri posko, kategori sampah |
-| **Button Label** | `Poppins` | SemiBold (600) | 15-16sp / 1.0rem | 1.0 | +0.02em | Seluruh teks tombol *pill-action*, huruf kapital awal kata (*Title Case*) |
-| **Input / Placeholder**| `Plus Jakarta Sans` | Regular (400) | 14sp / 0.875rem | 1.2 | normal | Field text input: "Contoh: 08123456789" |
+### 1.2. Yang diambil dari Starbucks (perilaku saja)
+
+| Diambil | Dipakai sebagai |
+|---|---|
+| Tombol bulat melayang 56 px dengan area tap diperluas 8 px | Tombol "Scan & QR Saya" di tengah menu bawah |
+| Efek tekan menyusut | Semua tombol dan kartu yang bisa disentuh |
+| Bayangan berlapis, lembut | Tombol melayang dan modal |
+| Progres ala Rewards | Bar menuju minimum pencairan (Rp 50.000) |
+| Aksen perayaan yang dijaga langka | Warna Sun hanya untuk bintang dan peringkat #1 |
+
+**Tidak diambil:** kanvas krem, House Green `#1E3932`, hijau `#00754A`, tombol pil 50 px, emas sebagai warna teks. Semuanya bertentangan dengan handoff atau gagal kontras.
 
 ---
 
-## 4. Geometri, Elevasi & Micro-Interactions
+## 2. Warna
 
-Mengikuti aturan Starbucks & Taste-Skill: **Restrained Depth + Tactile Feedback**. Hindari *drop shadow* tebal hitam buram khas template murahan.
+### 2.1. Token resmi (handoff bagian 2)
 
-### 4.1. Radius Sudut (Corner Geometry)
-- **Full Pill (`50px` / `9999px`)**: Tombol aksi utama (*ElevatedButton*), chip quick-nominal (Rp 50k, 100k), badge status.
-- **Card Radius (`16px`)**: Kartu Saldo Tabungan (*Pocket Card*), item katalog harga, ringkasan dampak lingkungan.
-- **Form & Input Radius (`12px`)**: Kotak input `TextFormField`, search bar, dropdown select.
-- **Surface Sheet Radius (`28px`)**: Lembaran putih melengkung atas pada halaman Login/Register dan Bottom Sheet Modal.
-- **Circular (`50%`)**: Tombol mengambang (FAB), avatar warga, ikon badge circular economy.
+| Token | Hex | Peran |
+|---|---|---|
+| `primary` | `#005E3F` | Warna utama: tombol aktif, ikon aktif, header brand |
+| `primary-hover` | `#00422D` | Hover/ditekan pada tombol primer |
+| `primary-dark` | `#005136` | Lencana |
+| `hero-from` | `#00573B` | Awal gradasi kartu saldo |
+| `hero-to` | `#006544` | Akhir gradasi kartu saldo |
+| `background` | `#F9FAFB` | Latar halaman, latar kolom isian |
+| `surface` | `#F6FAF7` | Menu bawah, latar ikon, penomoran klasemen |
+| `header` | `#FAFAFA` | Top bar |
+| `chip-selesai` | `#E8F7F1` | Chip status "Selesai" |
+| `line` | `#E5E7EB` | Garis pemisah |
+| `text-primary` | `#111827` | Judul dan teks utama |
+| `text-secondary` | `#414B45` | Teks pendamping, placeholder |
+| `border-input` | `#77857D` | Garis tepi kolom isian |
+| `nav-inactive` | `#26302B` | Label menu tidak aktif |
+| `accent` | `#B0F0D6` | Bar progres, momen fun |
+| `link` | `#115E39` | Tautan dan nominal bertanda + |
+| `disabled` | `#E1E4E3` | Tombol dan elemen nonaktif |
+| `focus` | `#0095FF` | Garis tepi fokus input dan fokus keyboard |
+| `error` | `#A31515` | Pesan error, tombol hapus/tolak |
 
-### 4.2. Layered Whisper Shadow System
-Shadow berlapis lembut (dua level: kontak dasar tipis + sebaran ambient transparan):
-```css
-/* Card Elevation: Lembut dan natural di atas Warm Cream Canvas */
---shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 8px 16px rgba(0, 0, 0, 0.04);
+### 2.2. Warna status dari mockup
 
-/* Floating CTA / Frap Style Scan Button */
---shadow-floating-frap: 0 4px 6px rgba(0, 77, 44, 0.20), 0 10px 24px rgba(0, 117, 74, 0.28);
+| Token | Hex | Dipakai |
+|---|---|---|
+| `warning-bg` / `warning-text` | `#FFF4DD` / `#724A00` | Banner "Saldo belum cukup", status "Diproses" |
+| `info-bg` / `info-border` | `#E6F4FF` / `#0EA5E9` | Banner info harga |
+| `success-bg` | `#ECFBF4` | Banner sukses, "Menunggu Pengambilan" |
 
-/* Sheet / Modal Elevation */
---shadow-modal: 0 -4px 16px rgba(0, 0, 0, 0.06), 0 20px 40px rgba(0, 0, 0, 0.12);
+### 2.3. Satu tambahan untuk suasana fun (usulan)
+
+| Token | Hex | Aturan |
+|---|---|---|
+| `sun` | `#FFD84D` | **Hanya sebagai isian** (bintang, lencana peringkat #1, konfeti). Teks di atasnya wajib `text-primary`. Tidak untuk tombol, tautan, atau teks. |
+
+`sun` menggantikan emas `#CBA258` dari v1. Emas gagal kontras sebagai teks (2,2:1) dan terlihat formal. Usulan ini dicatat di bagian 12.
+
+### 2.4. Aturan minimalis untuk warna
+
+- Maksimal tiga warna di satu layar: netral (`background`, putih), `primary`, dan satu aksen (`accent` atau `sun`).
+- Teks di atas `accent`: pakai `text-primary` (13,75:1). `primary` di atas `accent` hanya 6,09:1, jadi tidak boleh untuk teks kecil.
+- Tidak ada gradasi selain `hero-from` ke `hero-to`.
+
+### 2.5. Kontras terverifikasi
+
+Target proyek adalah minimal 7:1 (AAA) untuk teks. Elemen non-teks (garis tepi, cincin fokus) minimal 3:1.
+
+| Kombinasi | Rasio | Hasil |
+|---|---|---|
+| Putih di atas `primary` | 7,86:1 | Lulus AAA |
+| Putih di atas `hero-from` / `hero-to` | 8,65:1 / 7,13:1 | Lulus AAA |
+| Putih di atas `primary-hover` | 11,56:1 | Lulus AAA |
+| Putih di atas `primary-dark` | 9,42:1 | Lulus AAA |
+| `primary` di atas `background` | 7,52:1 | Lulus AAA |
+| `text-secondary` di atas `surface` | 8,60:1 | Lulus AAA |
+| `text-secondary` di atas `chip-selesai` | 8,20:1 | Lulus AAA |
+| `link` di atas putih | 7,82:1 | Lulus AAA |
+| `error` di atas `background` | 7,51:1 | Lulus AAA |
+| `warning-text` di atas `warning-bg` | 7,14:1 | Lulus AAA |
+| `nav-inactive` di atas `surface` | 12,94:1 | Lulus AAA |
+| `text-primary` di atas `sun` | 12,82:1 | Lulus AAA |
+| `text-primary` di atas `accent` | 13,75:1 | Lulus AAA |
+| `border-input` vs `background` (non-teks) | 3,70:1 | Lulus 3:1 |
+| `focus` vs putih (non-teks) | 3,11:1 | Lulus 3:1 |
+
+**Dilarang:** `#10B981` dan `#F59E0B` sebagai warna teks di atas putih (2,5:1 dan 2,2:1), serta border input yang lebih terang dari `border-input`.
+
+---
+
+## 3. Tipografi
+
+Poppins untuk judul dan tombol, Plus Jakarta Sans untuk isi teks.
+
+| Peran | Font | Bobot | Ukuran |
+|---|---|---|---|
+| Judul aplikasi | Poppins | Bold 700 | 32 px |
+| Angka saldo | Poppins | Bold 700 | 28 px (ukuran di mockup) |
+| Judul bagian | Poppins | SemiBold 600 | 20 px |
+| Nama / judul kartu | Poppins | SemiBold 600 | 15–18 px |
+| Tombol dan label formulir | Poppins | SemiBold / Bold / Regular | 16 px |
+| Isi teks | Plus Jakarta Sans | Regular 400 | 12–15 px |
+| Teks bantuan | Plus Jakarta Sans | Regular 400 | 14–15 px |
+| Label menu bawah | Plus Jakarta Sans | Bold 700 | 12 px |
+| Pesan error | Plus Jakarta Sans | Regular 400 | 12 px |
+
+Aturan minimalis untuk teks:
+- Ukuran terkecil 12 px. Tidak ada 11 px.
+- Hierarki lewat ukuran dan bobot, bukan warna baru.
+- Tracking judul `-0.01em` (penyempurnaan visual, tidak mengubah ukuran).
+
+---
+
+## 4. Bentuk, jarak, bayangan, gerak
+
+### 4.1. Jarak
+
+- Kelipatan 4: 4, 8, 12, 16, 20, 24.
+- Margin halaman 16 px. Jarak antarkartu 12 px.
+- **Jarak antarbagian minimal 24 px.** Ruang kosong adalah bagian dari desain, jangan diisi.
+
+### 4.2. Radius (handoff bagian 12)
+
+| Elemen | Radius |
+|---|---|
+| Kolom isian, tombol Masuk/Daftar | 10 px |
+| Kartu, tombol CTA pencairan | 16 px |
+| Kartu form, lencana | 20 px |
+| Kartu hero saldo | 30 px |
+| Chip filter, avatar, tombol melayang | Bulat penuh |
+
+### 4.3. Bentuk daun (tanda tangan visual)
+
+Radius diagonal: kiri-atas 20, kanan-atas 4, kanan-bawah 20, kiri-bawah 4. Hasilnya seperti daun. Dipakai **hanya** untuk:
+
+- lencana peringkat dan tier,
+- bingkai ilustrasi,
+- aksen kartu peringkat #1.
+
+Tidak dipakai di tombol, kolom isian, atau kartu data utama.
+
+### 4.4. Bayangan
+
+| Elemen | Bayangan |
+|---|---|
+| Kartu | `0 2px 4px rgba(0,0,0,0.08)`; hover `0 6px 12px rgba(0,0,0,0.12)` |
+| Tombol Masuk/Daftar (hover) | `0 8px 9px rgba(0,94,63,0.15)` |
+| Tombol melayang | `0 4px 6px rgba(0,94,63,0.20), 0 10px 24px rgba(0,94,63,0.28)` |
+| Modal / bottom sheet | `0 -4px 16px rgba(0,0,0,0.06), 0 20px 40px rgba(0,0,0,0.12)` |
+
+Satu permukaan: bayangan **atau** garis tepi, tidak keduanya.
+
+### 4.5. Gerak
+
+- Durasi standar 200–400 ms (handoff). Modal slide dari bawah 300 ms. Toast 3 detik di atas layar.
+- **Tekan:** menyusut ke `scale(0.97)` dalam 100 ms, kembali dalam 200 ms.
+- Kurva halus: `cubic-bezier(0.16, 1, 0.3, 1)`.
+- Semua animasi dekoratif mati saat pengguna mengaktifkan "kurangi gerakan".
+
+---
+
+## 5. Komponen
+
+Nilai di bawah mengikuti handoff bagian 3 dan 4.
+
+### 5.1. Tombol
+
+| Komponen | Spesifikasi |
+|---|---|
+| CTA Pencairan | Tinggi 48, radius 16, Poppins SemiBold 16. Nonaktif: `disabled`, teks `text-secondary`, ikon gembok 17. Aktif: `primary`, teks putih, ikon ATM 24. Hover: `primary-hover`. |
+| Masuk / Daftar | Tinggi 48, radius 10, `primary`, teks putih Poppins Bold 16. Hover: bayangan hijau lembut. |
+| Tombol melayang (Scan & QR Saya) | Lingkaran 56, `primary`, ikon putih. Area tap 72. Muncul di atas menu bawah. |
+
+Area sentuh minimal 48 x 48 untuk semua tombol, chip, dan tombol kembali.
+
+### 5.2. Kolom isian
+
+Tinggi 48, radius 10, latar `background`, garis tepi 1 px `border-input`, placeholder `text-secondary`. Fokus: garis tepi `focus`. Error: pesan 12 px `error` di bawah kolom.
+
+### 5.3. Kartu saldo "In Pocket"
+
+- Gradasi `hero-from` ke `hero-to`, radius 30.
+- Isi: nama dan status, label "In Pocket", angka saldo (Poppins Bold 28, putih), "Minimum redeem", bar progres, "Next Redeem".
+- Bar progres: jalur putih 20 persen, isian `accent`. Teks persentase tetap ditampilkan (bukan hanya visual).
+- **Momen fun:** lihat "Tunas Progres" di 6.2.
+
+### 5.4. Kartu umum
+
+Putih, radius 16, bayangan kartu. Tanpa garis tepi. Ikon di kotak `surface` hanya untuk kartu statistik yang punya angka nyata di sebelahnya.
+
+### 5.5. Chip kategori dan nominal
+
+- Aktif: isian `primary`, teks putih, Poppins SemiBold.
+- Tidak aktif: putih, garis tepi 1 px `border-input`, teks `text-primary`.
+- Tinggi 48. Bar bisa digeser ke samping.
+- Chip nominal terpilih diberi tanda centang kecil. Nominal cepat: Rp 50.000, Rp 100.000, Rp 150.000.
+
+### 5.6. Menu bawah
+
+Latar `surface`. Item aktif `primary` dengan garis penanda 20 x 3 px. Item tidak aktif: label `nav-inactive`. Lima item: Home, Katalog, Scan & QR Saya, Info, Profile.
+
+### 5.7. Tab, modal, toast, header
+
+| Komponen | Spesifikasi |
+|---|---|
+| Tab Scan QR / QR Saya | Garis indikator aktif 44 x 3 px |
+| Modal konfirmasi | 272 x 113, tombol Cancel dan Delete, slide dari bawah 300 ms |
+| Toast sukses | 199 x 38, di atas layar, 3 detik |
+| Header | Latar `header`, tinggi 64, titik merah (`error`) pada lonceng bila ada notifikasi |
+| Skeleton | Placeholder `disabled`, animasi shimmer |
+
+---
+
+## 6. Lapisan Fun (Playful Layer)
+
+### 6.1. Aturan
+
+1. **Maksimal satu momen fun aktif per layar.**
+2. Boleh di: layar kosong, berhasil, memuat, naik peringkat, selamat datang.
+3. **Dilarang di:** formulir, konfirmasi nominal uang, biaya, pesan error validasi, layar keamanan.
+4. Fun tidak boleh menghalangi tugas. Semua animasi bisa dilewati dan mati bila gerakan dikurangi.
+
+### 6.2. Momen fun
+
+| # | Momen | Spesifikasi |
+|---|---|---|
+| 1 | **Eco Loop Spinner** | Pemuatan: cincin panah pada logo berputar 360 derajat, 1,2 detik linear tanpa henti, daun di tengah diam. Ganti "Memuat…" yang kaku. |
+| 2 | **Tunas Progres** | Di ujung bar progres menuju minimum pencairan ada ikon tanaman 20 px yang berubah: 0–24% biji, 25–49% tunas, 50–74% bibit dua daun, 75–99% tanaman kecil, 100% daun mekar (denyut sekali). |
+| 3 | **Konfeti daun** | Layar "Pengajuan Berhasil": 10–14 daun kecil (warna `accent`, `primary`, `sun`) menyebar 1,2 detik lalu jatuh 1,6 detik. Sekali per kejadian. |
+| 4 | **Bentuk daun** | Lencana tier dan bingkai ilustrasi memakai radius diagonal (4.3). |
+| 5 | **Peringkat #1** | Kartu peringkat 1 diberi bintang `sun` dan satu sapuan garis lengkung `accent` di bawah nama. Hanya di peringkat 1. |
+| 6 | **Ilustrasi datar** | Satu ilustrasi per layar kosong atau berhasil, dari paket aset: `empty-state`, `hero-planet`, `recycle-bin`, `success`. Warna hijau dan mint saja. |
+| 7 | **Sapaan harian** | Judul dashboard menyapa dengan nama. Teks pendampingnya berganti-ganti ringan (lihat 6.3). |
+| 8 | **Tekan taktil** | Efek tekan menyusut (4.5) dan getar ringan di tombol melayang. |
+
+### 6.3. Suara tulisan
+
+Gaya: hangat, singkat, memakai "kamu". Pakai "kamu" konsisten (handoff saat ini mencampur "Anda" dan "kamu").
+
+| Sebelumnya (kaku) | Sesudahnya (hangat) |
+|---|---|
+| Belum ada aktivitas. Mulai setorkan sampah pilahan Anda... | Belum ada setoran nih. Yuk, bawa sampah pilahan pertamamu ke posko! |
+| belum ada klasemen. | Klasemen masih kosong. Jadilah yang pertama menumbuhkan tunas! |
+| Memuat data Eco Plamo... | Lagi mengumpulkan harga terbaru… |
+| Terjadi kesalahan jaringan. Coba lagi nanti. | Sinyalmu putus. Tenang, setoranmu aman dan akan tersinkron otomatis. |
+| Warga tidak ditemukan. | Belum ketemu. Coba cek ejaan nama atau blok rumahnya ya. |
+
+**Tetap netral dan jelas** (tanpa humor): pesan error validasi, nominal uang dan biaya, konfirmasi pencairan, keamanan kata sandi. Contoh: "Saldo belum mencapai minimum Rp 50.000" tetap persis begitu.
+
+---
+
+## 7. Aturan Minimalis (Anti-Slop)
+
+1. **Satu hero per layar.** Kartu saldo di dashboard, ilustrasi di layar kosong, ikon centang di layar sukses.
+2. **Tidak ada pelangi atau neon.** Hanya hijau dan mint, dengan `sun` di momen langka.
+3. **Tidak ada ikon tanpa tujuan.** Ikon di kotak pastel hanya jika menyertai angka atau aksi nyata.
+4. **Angka nyata.** Dashboard menampilkan angka riil (kilogram, saldo, setoran, peringkat). Tidak ada angka hiasan.
+5. **Ruang lapang.** Minimal 24 px antarbagian di mobile. Jika terasa sesak, hapus elemen, jangan perkecil.
+6. **Satu permukaan, satu pemisah.** Bayangan atau garis, tidak keduanya.
+
+---
+
+## 8. Layar
+
+Format: gaya minimalis di setiap layar, ditambah satu momen fun yang diizinkan (nomor merujuk ke 6.2).
+
+| Layar | Gaya minimalis | Momen fun |
+|---|---|---|
+| Splash | Latar hijau, logo Eco Loop putih | #1 spinner halus |
+| Login | Header hijau, kartu putih radius 20 | (tidak ada: formulir) |
+| Buat Akun | Empat kolom, tombol Buat Akun | (tidak ada: formulir) |
+| Dashboard Warga | Kartu saldo, empat kartu statistik, aktivitas, klasemen | #2 Tunas Progres, #7 sapaan |
+| Dashboard (pengguna baru) | Saldo Rp 0, dua tombol | #6 ilustrasi `empty-state` |
+| Katalog Harga | Pencarian, chip, daftar harga | (tidak ada) |
+| Katalog (memuat) | Skeleton | #1 spinner |
+| Info & Pengumuman | Chip, kartu berita | (tidak ada) |
+| Detail Informasi | Foto, judul Poppins, isi | (tidak ada) |
+| Pencairan Tunai | Saldo, nominal, ringkasan | (tidak ada: uang) |
+| Konfirmasi Pencairan | Rincian biaya jelas | (tidak ada: uang) |
+| Pengajuan Berhasil | Centang, nomor referensi | #3 konfeti daun |
+| Scan & QR Saya | Tab ganda, kamera | (tidak ada) |
+| Riwayat Transaksi | Filter, daftar bertanggal | #6 bila kosong |
+| Profil | Avatar, statistik, menu | (tidak ada) |
+| Edit Profil | Formulir | (tidak ada: formulir) |
+| Keamanan & Kata Sandi | Formulir | (tidak ada: keamanan) |
+| Klasemen Plamo Garden | Daftar 1–5 | #5 peringkat #1 |
+| Dashboard Pengurus | Antrean pencairan, tombol Tolak / Setujui & Bayar | (tidak ada: uang) |
+| Koneksi Terputus | Pesan, Coba Lagi, Cek Status Server | #6 ilustrasi |
+| Offline | Label "Mode Luar Jaringan" | (tidak ada) |
+
+---
+
+## 9. Kondisi layar
+
+| Kondisi | Perilaku |
+|---|---|
+| **Error jaringan** | Frame "Koneksi Terputus": label offline, pesan, tombol Coba Lagi dan Cek Status Server, langkah periksa cepat, catatan draf tersimpan lokal. |
+| **Error formulir** | Garis tepi dan pesan 12 px `error` di bawah kolom. Pesan tepat seperti di handoff bagian 5. |
+| **Kosong** | Satu ilustrasi, satu kalimat hangat, satu atau dua tombol aksi. |
+| **Memuat** | Skeleton `disabled` dengan shimmer, plus Eco Loop Spinner dan teks singkat. |
+
+---
+
+## 10. Responsif dan aksesibilitas
+
+### 10.1. Responsif
+
+| Ukuran | Perilaku |
+|---|---|
+| Mobile (≤600 px) | Satu kolom, margin 16 px, kartu statistik 2 kolom (174,5 px), menu bawah tetap |
+| Tablet (601–1024 px) | Konten maksimal 640 px di tengah, kartu statistik 4 kolom |
+| Desktop (≥1025 px) | Dua kolom (saldo dan statistik di kiri, aktivitas dan klasemen di kanan), menu bawah menjadi sidebar kiri |
+
+Frame ponsel acuan 393 x 852 px.
+
+### 10.2. Aksesibilitas
+
+- Kontras minimal 7:1 untuk teks (tabel 2.5).
+- Area sentuh minimal 48 x 48 px.
+- Semua gambar dan ikon punya teks alternatif ("Logo Eco Plamo", "Ikon pindai kode QR").
+- Fokus keyboard ditandai garis `focus`, urutan Tab dari atas ke bawah.
+- Animasi dekoratif mati saat "kurangi gerakan" aktif.
+- Progres, peringkat, dan status tidak hanya disampaikan lewat warna atau animasi: selalu ada teks.
+
+---
+
+## 11. Token teknis
+
+### 11.1. Flutter
+
+```dart
+class AppColors {
+  static const primary       = Color(0xFF005E3F);
+  static const primaryHover  = Color(0xFF00422D);
+  static const primaryDark   = Color(0xFF005136);
+  static const heroFrom      = Color(0xFF00573B);
+  static const heroTo        = Color(0xFF006544);
+  static const background    = Color(0xFFF9FAFB);
+  static const surface       = Color(0xFFF6FAF7);
+  static const header        = Color(0xFFFAFAFA);
+  static const chipSelesai   = Color(0xFFE8F7F1);
+  static const line          = Color(0xFFE5E7EB);
+  static const textPrimary   = Color(0xFF111827);
+  static const textSecondary = Color(0xFF414B45);
+  static const borderInput   = Color(0xFF77857D);
+  static const navInactive   = Color(0xFF26302B);
+  static const accent        = Color(0xFFB0F0D6);
+  static const link          = Color(0xFF115E39);
+  static const disabled      = Color(0xFFE1E4E3);
+  static const focus         = Color(0xFF0095FF);
+  static const error         = Color(0xFFA31515);
+  static const sun           = Color(0xFFFFD84D); // usulan, hanya isian
+}
+
+class AppRadius {
+  static const input = 10.0, card = 16.0, formCard = 20.0, hero = 30.0;
+  static const leaf = BorderRadius.only(
+    topLeft: Radius.circular(20), topRight: Radius.circular(4),
+    bottomRight: Radius.circular(20), bottomLeft: Radius.circular(4));
+}
 ```
 
-### 4.3. Tactile Motion & Press Feedback
-- **Active Press Feedback**: Setiap klik/tap pada tombol utama dan kartu interaktif menyusut secara taktil dengan `scale(0.97)` dan durasi transisi `120ms ease-out`.
-- **Spring Curve**: Gunakan kurva `cubic-bezier(0.16, 1, 0.3, 1)` untuk perpindahan tab dan transisi halaman.
+Atur `scaffoldBackgroundColor: AppColors.background`. Tombol Masuk/Daftar memakai radius 10, tombol CTA radius 16, tinggi 48.
+
+### 11.2. Tailwind (web DLH)
+
+```js
+colors: {
+  primary: { DEFAULT: '#005E3F', dark: '#00422D', deeper: '#005136' },
+  hero: { from: '#00573B', to: '#006544' },
+  accent: '#B0F0D6', surface: '#F6FAF7', page: '#F9FAFB',
+  ink: '#111827', muted: '#414B45', line: '#E5E7EB',
+  field: '#77857D', disabled: '#E1E4E3', focus: '#0095FF', danger: '#A31515',
+  sun: '#FFD84D',
+},
+fontFamily: {
+  heading: ['Poppins', 'sans-serif'],
+  body: ['Plus Jakarta Sans', 'sans-serif'],
+},
+boxShadow: {
+  card: '0 2px 4px rgba(0,0,0,0.08)',
+  cta: '0 8px 9px rgba(0,94,63,0.15)',
+  fab: '0 4px 6px rgba(0,94,63,0.20), 0 10px 24px rgba(0,94,63,0.28)',
+},
+```
 
 ---
 
-## 5. Komponen Utama yang Ditingkatkan (Core Component Specs)
+## 12. Usulan dan keputusan yang masih terbuka
 
-### 5.1. The "Green Pocket" Card (Hero Saldo & Tabungan Warga)
-Mengadaptasi kartu statement Starbucks Rewards:
-- **Background**: Solid *House Green* (`#1E3932`) atau gradient sangat halus ke `#112A24`.
-- **Inner Pattern**: Watermark halus lingkaran panah sirkular (daun daur ulang) dengan opacity 6%.
-- **Konten**:
-  - Baris Atas: Label *"Saldo Tabungan Sampah"* (Text White Muted 72%) + Badge Status *"Aktif"* dalam Mint Tint pill.
-  - Baris Tengah: Nominal Saldo format Rupiah tebal (`Poppins Bold 26sp`, misal: `Rp 124.500`).
-  - Baris Bawah: Dua tombol pill cepat — `[+ Setor Sampah]` (Accent Green `#00754A`) dan `[Pencairan Tunai]` (Outlined White border 1.5px).
+Butuh persetujuan Product Manager sebelum masuk handoff.
 
-### 5.2. Floating "Plamo-Frap" Action Button (Tengah Navigasi)
-Mengadaptasi tombol ikonik floating circular Starbucks Frap:
-- **Ukuran**: Diameter 56px, lingkaran penuh (`borderRadius: 50%`).
-- **Warna**: *Accent Green* (`#00754A`) dengan ikon putih tebal (Kamera Scan QR / Timbang Sampah).
-- **Elevasi**: Layered shadow `--shadow-floating-frap`.
-- **Interaksi**: Floating di atas *Bottom Navigation Bar*, bergetar halus (*haptic light*) dan mengecil `scale(0.94)` saat ditekan.
+### 12.1. Berbeda antara v1 dan handoff (diputuskan: ikut handoff)
 
-### 5.3. EcoTextField (Form Input Elegan)
-- **Latar Belakang**: `#FFFFFF` di atas halaman krem.
-- **Border Default**: `1px solid #EFECE6` dengan transisi mulus.
-- **Focused State**: `1.5px solid #00754A` + ring bayangan mint halus `0 0 0 4px rgba(212, 233, 226, 0.40)`.
-- **Label**: `Plus Jakarta Sans 13sp`, weight 500, warna `#1E1E1E`.
+| Item | v1 | Handoff / mockup | Dipakai |
+|---|---|---|---|
+| Biaya admin pencairan | Rp 0 | Rp 2.500 | **Rp 2.500** |
+| Nominal cepat | 50k, 100k, 200k | 50k, 100k, 150k | **50k, 100k, 150k** |
+| Pilihan nominal | Slider | Chip nominal | **Chip** |
+| Latar halaman | Krem `#F7F5F0` | `#F9FAFB` | **`#F9FAFB`** |
+| Warna tombol | `#00754A` | `#005E3F` | **`#005E3F`** |
+| Hero saldo | `#1E3932` | Gradasi `#00573B` ke `#006544` | **Gradasi** |
 
-### 5.4. Filter Chips & Katalog Kategori Sampah
-- **Chip Tidak Aktif**: Background `#FFFFFF`, border `1px solid #E2E8F0`, teks `#5F6368`.
-- **Chip Aktif**: Background *Mint Surface Wash* (`#D4E9E2`), border `1.5px solid #006D44`, teks *Brand Emerald* (`#006D44`) tebal.
-- **Kartu Item Sampah**: Menampilkan ilustrasi botol/kardus dengan foto/vektor natural, tag harga satuan (`Rp 3.500 / kg`), dan indikator tren harga.
+### 12.2. Fitur dan visual baru (usulan, belum berlaku)
 
-### 5.5. Plamo Garden (Leaderboard & Rewards Ceremony)
-- **Top 1 Contributor**: Card khusus dengan aksen garis pinggir *Prestige Gold* (`#CBA258`), badge mahkota daun emas, dan latar *Gold Lightest* (`#FAF6EE`).
-- **Tiering Warga**:
-  1. *Sprout (Bibit Hijau)*: < 25 kg sampah terkumpul
-  2. *Guardian (Penjaga Alam)*: 25 - 100 kg sampah terkumpul
-  3. *Eco Master (Pahlawan Plamo)*: > 100 kg sampah terkumpul (Status Gold Bintang)
+| Usulan | Catatan |
+|---|---|
+| Warna `sun` `#FFD84D` | Pengganti emas, hanya isian |
+| Tier warga: Bibit (<25 kg), Tunas (25–100 kg), Pohon (>100 kg) | Nama dan batas kilogram perlu disetujui |
+| Estimasi karbon terselamatkan (kg CO2) | Perlu rumus resmi dari DLH |
+| Tiket registrasi `REG-PLM-…` dan biaya kas posko Rp 10.000 | Tidak ada di handoff |
+| Tombol unduh bukti, tren harga, senter pada scan | Tidak ada di handoff |
+| Momen fun 6.2 nomor 1–8 | Spesifikasi gerak perlu diuji di perangkat |
+| "Kamu" konsisten di seluruh UI | Perlu menyeragamkan teks mockup yang masih memakai "Anda" |
 
 ---
 
-## 6. Prinsip Anti-Slop (Taste-Skill House Rules)
+## 13. Perubahan dari v1
 
-1. **Haram Gradient Pelangi & Neon**: Tidak menggunakan ungu, biru neon, atau gradient 3 warna yang tidak memiliki kaitan dengan alam atau identitas Eco Plamo.
-2. **Tidak Ada Ikon Tanpa Konteks**: Hindari meletakkan ikon generik di dalam kotak pastel membulat tanpa data atau tujuan interaksi yang jelas.
-3. **Substansi Metrik Nyata**: Setiap dashboard wajib menyajikan angka riil: Total Kilogram Sampah, Saldo Rupiah Tersedia, dan Estimasi Karbon Terselamatkan (Kg CO2).
-4. **Breathing Room Generous**: Spacing antar section minimal `24px - 32px` di mobile dan `40px - 64px` di web dashboard DLH untuk mencegah kesan UI sesak.
-
----
-
-## 7. Pemetaan 21 Layar Sesuai Arsitektur Desain Baru
-
-| No | Layar Figma | Implementasi Gaya Starbucks + Anti-Slop | Komponen Kunci |
-| :---: | :--- | :--- | :--- |
-| **1-2** | Splash Screen | Background pekat *House Green* (`#1E3932`), emblem logo daun lingkaran emas-putih elegan. | `EcoPlamoLogo`, subtle pulsing spinner |
-| **3** | Login (Masuk) | Header House Green anggun dengan kurva 28px ke kanvas form krem hangat `#F7F5F0`. | `EcoTextField`, `EcoPrimaryButton` full-pill |
-| **4** | Buat Akun (Register) | Form warga terstruktur (Nama, WA, Hunian, RT/RW, Kata Sandi) + Banner info verifikasi domisili & biaya kas posko Rp 10.000. | Form input berjenjang, RT selector, notice banner posko |
-| **4b** | Tiket Registrasi Warga | Layar status pendaftaran digital receipt: Nomor tiket registrasi unik (`REG-PLM-...`), rincian warga, status menunggu, instruksi 3 langkah ke posko. | `RegisterSuccessScreen`, receipt card, copy ticket button |
-| **5** | Konfirmasi Pencairan | Kartu faktur bersih: Saldo ditarik, biaya admin (Rp 0), posko pengambilan tunai. | Breakdown card, badge biaya admin gratis |
-| **6** | Pengajuan Berhasil | Lingkaran centang sukses *Accent Green*, kode referensi unik `ECP-WD-...`, tombol unduh bukti. | Success checkmark animatif, ticket card |
-| **7** | Dashboard Warga | *Green Pocket Card* saldo tabungan, quick actions, ringkasan kontribusi Kg, Klasemen Plamo Garden. | Saldo Card, Grid Kilogram, Leaderboard Top 3 |
-| **8** | Katalog Harga Sampah | Search bar keramik, chip kategori (Plastik, Kertas, Logam, Minyak Jelantah), kartu harga jelas per Kg. | Category pills, price list card, price trend |
-| **9** | Info & Pengumuman | Tab pill (Semua, Agenda Posko, Edukasi), kartu artikel fotografi bersih tanpa ornamen berlebih. | Article media cards, badge tanggal agenda |
-| **10-11**| Pencairan Tunai | Slider interaktif + Chips nominal cepat (Rp 50k, 100k, 200k), indikator syarat minimal saldo. | Quick amount chips, balance warning banner |
-| **12** | Detail Informasi | Editorial layout: Header foto penuh, judul Poppins tebal, teks narasi Plus Jakarta Sans 15sp. | Hero banner, sharing button, content body |
-| **13** | Profil Warga | Header profil hangat, card statistik seumur hidup (total Kg & total Rp), menu list berjarak lapang. | User avatar card, action menu tiles |
-| **14-15**| Scan & QR Saya | Tab ganda: Kamera scan setor posko & QR Barcode statis warga untuk verifikasi cepat oleh petugas. | QR generator container, flashlight button |
-| **16** | Bottom Navigation | Bilah navigasi 5 menu berlatar putih dengan floating circular center button (*The Plamo Frap*). | `EcoBottomNavBar`, center FAB scanner |
-| **17** | Top App Bar | Header bersih: Logo Eco Plamo, sapaan warga, lonceng notifikasi interaktif, foto profil thumbnail. | App bar responsive, notification pill |
-| **18** | Riwayat Transaksi | Filter tab (Semua, Setoran Masuk, Penarikan Saldo), grouping tanggal dengan nominal warna hijau/merah. | Transaction tile, status chip (Selesai/Proses) |
-| **19** | Edit Profil | Form edit foto warga, nama lengkap, kontak WhatsApp, nomor rumah dengan tombol simpan full-pill. | Photo upload picker, save changes button |
-| **20** | Keamanan Akun | Form ganti kata sandi dengan indikator kekuatan password yang jelas dan aman. | Password strength meter, security notice |
-| **21** | Dashboard Pengurus | Tampilan khusus petugas posko: Tombol timbang cepat, antrean persetujuan penarikan kas tunai. | Timbang cepat button, queue approval card |
-
----
-
-## 8. Panduan Eksekusi Teknis Pengembang
-
-### Di Flutter (`flutter_app/lib/theme/`):
-- Definisikan `AppColors` yang mencakup `houseGreen`, `brandEmerald`, `accentGreen`, `mintWash`, `canvasWarm`, `surfaceCeramic`, dan `prestigeGold`.
-- Terapkan `ThemeData` dengan `scaffoldBackgroundColor: AppColors.canvasWarm`.
-- Kustomisasi `ElevatedButtonThemeData` dengan `RoundedRectangleBorder(borderRadius: BorderRadius.circular(50))` dan padding vertikal `14px-16px`.
-
-### Di Web Dashboard DLH (`dlh_web/`):
-- Set root CSS variables sesuai token di Bab 2.
-- Gunakan `font-family: 'Poppins', 'Plus Jakarta Sans', sans-serif`.
-- Pastikan elemen interaktif memiliki `:hover` dan `:active` transform scale untuk merefleksikan estetika responsif kelas dunia.
+- Seluruh token warna, radius, bayangan, ukuran huruf, dan durasi disamakan dengan handoff.
+- Dihapus: kanvas krem, House Green, `#00754A`, tombol pil 50 px, emas sebagai teks, fokus hijau, border input pucat.
+- Tabel kontras diperbarui. Semua pasangan teks lulus 7:1.
+- Bagian 2.2 yang duplikat dihapus.
+- Ditambah: Lapisan Fun (bagian 6), aturan minimalis (bagian 7), kondisi layar (bagian 9), responsif dan aksesibilitas (bagian 10).
+- Fitur yang tidak ada di handoff dipindahkan ke bagian 12.

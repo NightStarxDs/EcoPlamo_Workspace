@@ -251,26 +251,31 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.formCard),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.desktop_windows_rounded,
-                color: Color(0xFF006D44),
+                color: AppColors.primary,
                 size: 24,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 'Web Portal DLH',
-                style: AppTypography.h3(),
+                style: AppTypography.h3(color: AppColors.textPrimary),
               ),
             ),
           ],
@@ -281,29 +286,38 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
           children: [
             Text(
               'Halo, ${user['nama_lengkap'] ?? 'Petugas DLH'}!',
-              style: AppTypography.bodyLarge().copyWith(fontWeight: FontWeight.bold),
+              style: AppTypography.bodyLarge().copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Untuk kemudahan pengelolaan wilayah, data rekapitulasi, dan monitoring menyeluruh, dashboard Dinas Lingkungan Hidup (DLH) disediakan dalam versi Web.',
               style: AppTypography.bodyMedium(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F4F1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                border: Border.all(color: AppColors.line),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.link_rounded, size: 16, color: Color(0xFF006D44)),
-                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.link_rounded,
+                    size: 18,
+                    color: AppColors.link,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       dlhUrl,
-                      style: AppTypography.caption(color: const Color(0xFF006D44)),
+                      style: AppTypography.caption(color: AppColors.link).copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -312,7 +326,6 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           Row(
             children: [
@@ -325,17 +338,21 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                     Navigator.pushReplacementNamed(context, '/dlh-dashboard');
                   },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: AppColors.line, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
                   child: Text(
                     'Versi Mobile',
-                    style: AppTypography.button(color: AppColors.textSecondary),
+                    style: AppTypography.button(color: AppColors.textSecondary).copyWith(
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () async {
@@ -362,20 +379,28 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                     } catch (e) {
                       if (!ctx.mounted) return;
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                           content: Text('Error: Pastikan Laragon web server berjalan'),
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.error,
                         ),
                       );
                     }
                   },
                   icon: const Icon(Icons.open_in_browser_rounded, size: 18),
-                  label: const Text('Buka Web'),
+                  label: Text(
+                    'Buka Web',
+                    style: AppTypography.button(color: Colors.white).copyWith(
+                      fontSize: 14,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006D44),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
                 ),
               ),
@@ -388,43 +413,49 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF006D44),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF006D44),
-              Color(0xFF005232),
-              Color(0xFF003D25),
-            ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.heroFrom,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.heroFrom, // #00573B (Handoff Resmi)
+                AppColors.heroTo,   // #006544 (Handoff Resmi)
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      children: [
-                        // ── BAGIAN ATAS (HIJAU) - LOGO & BRANDING ──
-                        _buildAnimatedHeader(),
+          child: SafeArea(
+            bottom: false,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          // ── BAGIAN ATAS (HERO) - LOGO & BRAND IDENTITY ──
+                          _buildAnimatedHeader(),
 
-                        // ── BAGIAN BAWAH (PUTIH) - FORM LOGIN DENGAN ANIMASI IN & OUT ──
-                        _buildAnimatedFormCard(),
-                      ],
+                          // ── BAGIAN BAWAH (FORM KARTU PUTIH) ──
+                          _buildAnimatedFormCard(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -432,7 +463,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   }
 
   /// -------------------------------------------------------------------------
-  /// Header Hijau Brand dengan Animasi In/Out + Floating Hover
+  /// Header Hijau Brand (heroFrom ke heroTo) dengan Animasi In/Out + Hover
   /// -------------------------------------------------------------------------
   Widget _buildAnimatedHeader() {
     return Expanded(
@@ -463,45 +494,47 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo Daun Sirkular Eco Plamo
+              // Logo Daun Sirkular Eco Plamo dengan halo lembut
               Container(
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                      color: Colors.black.withValues(alpha: 0.14),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
                 child: const EcoPlamoLogo(
-                  size: 76,
+                  size: 78,
                   withBackground: false,
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Judul Brand "Eco Plamo" (Figma Display Bold)
+              // Judul Brand "Eco Plamo" (Poppins Bold 32, -0.01em)
               Text(
                 'Eco Plamo',
                 style: AppTypography.displayBold(color: Colors.white).copyWith(
-                  fontSize: 28,
-                  letterSpacing: 0.5,
+                  fontSize: 32,
+                  letterSpacing: -0.32,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // Slogan
+              // Slogan (Hangat, Ringan & Bersih)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
-                  'Wujudkan Lingkungan Yang Bersih Dan Ekonomi\nSirkular Bersama Eco Plamo',
+                  'Wujudkan Lingkungan Bersih Dan Ekonomi\nSirkular Bersama Eco Plamo',
                   textAlign: TextAlign.center,
                   style: AppTypography.slogan(
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: Colors.white.withValues(alpha: 0.90),
                   ).copyWith(
-                    fontSize: 12.5,
+                    fontSize: 13,
                     height: 1.45,
                   ),
                 ),
@@ -514,7 +547,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
   }
 
   /// -------------------------------------------------------------------------
-  /// Form Container Putih Melengkung dengan Animasi In & Out yang Mewah
+  /// Form Container Putih Bersih (Radius 20, Bayangan Lembut, Tanpa Clutter)
   /// -------------------------------------------------------------------------
   Widget _buildAnimatedFormCard() {
     return AnimatedBuilder(
@@ -540,48 +573,82 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(28),
-            topRight: Radius.circular(28),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.formCard), // 20 px per DESIGN_SYSTEM.md v2
           ),
           boxShadow: [
             BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+            BoxShadow(
               color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 20,
-              offset: const Offset(0, -6),
+              blurRadius: 40,
+              offset: const Offset(0, 20),
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
+        padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 32.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Pull Handle Bar Minimalis
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
               // 1. Judul Halaman "Masuk" (Stagger 1)
               _buildStaggeredItem(
                 intervalStart: 0.2,
                 intervalEnd: 0.55,
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 4,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Masuk',
+                          style: AppTypography.h2(color: AppColors.textPrimary).copyWith(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(height: 6),
                     Text(
-                      'Masuk',
-                      style: AppTypography.h2(color: AppColors.textPrimary),
+                      'Silakan masuk untuk mengelola tabungan sampahmu.',
+                      style: AppTypography.bodyMedium(color: AppColors.textSecondary).copyWith(
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Banner Pesan Kesalahan (jika login gagal)
               if (_errorMessage != null) ...[
@@ -595,7 +662,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                 intervalEnd: 0.70,
                 child: EcoTextField(
                   label: 'Nomor WhatsApp / Username',
-                  hintText: 'Contoh: 08123456789',
+                  hintText: 'Contoh: 08123456789 atau username',
                   controller: _whatsappController,
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
@@ -640,7 +707,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                             ? Icons.visibility_rounded
                             : Icons.visibility_off_rounded,
                         key: ValueKey(_isPasswordVisible),
-                        color: AppColors.textHint,
+                        color: AppColors.textSecondary,
                         size: 20,
                       ),
                     ),
@@ -661,15 +728,28 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // 4. Tombol Masuk (Stagger 4)
+              // 4. Tombol Masuk Minimalis (Tinggi 48, Radius 10, Tactile scale 0.97) (Stagger 4)
               _buildStaggeredItem(
                 intervalStart: 0.60,
                 intervalEnd: 0.92,
                 child: EcoPrimaryButton(
                   text: 'Masuk',
                   isLoading: _isLoading,
-                  height: 52,
-                  borderRadius: 12,
+                  height: 48, // Handoff standard
+                  borderRadius: AppRadius.input, // 10 px
+                  backgroundColor: AppColors.primary,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x26005E3F), // 0 8px 9px rgba(0,94,63,0.15)
+                      blurRadius: 9,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                  icon: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   onPressed: _handleLogin,
                 ),
               ),
@@ -681,22 +761,23 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                 intervalEnd: 1.0,
                 child: Center(
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     onTap: _isLoading ? null : _navigateToRegister,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: RichText(
                         text: TextSpan(
                           text: 'Belum punya akun? ',
                           style: AppTypography.bodyMedium(
                             color: AppColors.textSecondary,
-                          ),
+                          ).copyWith(fontSize: 14),
                           children: [
                             TextSpan(
                               text: 'Daftar di sini',
                               style: AppTypography.bodyMedium(
-                                color: AppColors.primary,
+                                color: AppColors.link,
                               ).copyWith(
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                               ),
@@ -708,7 +789,34 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+
+              // 6. Security & Trust Footnote Bersih
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Sistem Resmi Bank Sampah Plamo Garden',
+                          style: AppTypography.caption(color: AppColors.textSecondary).copyWith(
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -759,12 +867,12 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           border: Border.all(
-            color: AppColors.error.withValues(alpha: 0.3),
+            color: AppColors.error.withValues(alpha: 0.25),
             width: 1,
           ),
         ),
@@ -781,6 +889,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                 _errorMessage ?? '',
                 style: AppTypography.caption(color: AppColors.error).copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ),

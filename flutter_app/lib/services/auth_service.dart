@@ -553,6 +553,35 @@ class AuthService {
     }
   }
 
+  /// POST /api/warga/pencairan — Ajukan pencairan tunai saldo warga
+  Future<Map<String, dynamic>> ajukanPencairan({required double nominal}) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/warga/pencairan'),
+            headers: headers,
+            body: jsonEncode({'nominal': nominal}),
+          )
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true || response.statusCode == 201;
+      return {
+        'success': ok,
+        'message': data['message'] ??
+            (ok ? 'Pengajuan pencairan berhasil dikirim.' : 'Gagal mengajukan pencairan.'),
+        if (data['data'] != null) 'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
+  /// Alias ajukanPencairanWarga → ajukanPencairan
+  Future<Map<String, dynamic>> ajukanPencairanWarga({required double nominal}) =>
+      ajukanPencairan(nominal: nominal);
+
   /// GET /api/dlh/dashboard
   Future<Map<String, dynamic>?> getDlhDashboard() async {
     try {
