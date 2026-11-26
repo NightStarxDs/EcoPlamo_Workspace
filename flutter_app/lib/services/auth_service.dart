@@ -956,37 +956,6 @@ class AuthService {
     }
   }
 
-  /// POST /api/warga/pencairan — warga mengajukan pencairan saldo
-  Future<Map<String, dynamic>> ajukanPencairan({
-    required double nominal,
-  }) async {
-    try {
-      final baseUrl = await getBaseUrl();
-      final headers = await _authHeaders();
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/warga/pencairan'),
-            headers: headers,
-            body: jsonEncode({'nominal': nominal}),
-          )
-          .timeout(const Duration(seconds: 15));
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final ok = data['success'] == true ||
-          response.statusCode == 200 ||
-          response.statusCode == 201;
-      return {
-        'success': ok,
-        'message': data['message'] ??
-            (ok
-                ? 'Pengajuan pencairan berhasil dikirim!'
-                : 'Gagal mengajukan pencairan.'),
-        'data': data['data'],
-      };
-    } catch (e) {
-      return {'success': false, 'message': 'Koneksi gagal: $e'};
-    }
-  }
-
   // ── Pengaturan Pencairan ────────────────────────────────────────────────────
 
   /// GET /api/pengurus/pengaturan-pencairan

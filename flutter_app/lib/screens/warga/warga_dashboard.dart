@@ -63,31 +63,37 @@ class _WargaDashboardState extends State<WargaDashboard>
 
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _currentUser;
-  Map<String, dynamic>? _dashboardData; // data dari GET /api/warga/dashboard
+  Map<String, dynamic>? _dashboardData; // cache dari getWargaDashboard()
   bool _isLoadingUser = true;
-  bool _isLoadingDashboard = true;
+  bool _isLoadingDashboard = false;
   bool _balanceVisible = true;
   bool _isSubmittingPencairan = false;
 
-  // --- Getters data API (dengan fallback) ------------------------------------
-  int get _saldo => (_dashboardData?['saldo'] as num?)?.toInt() ?? 0;
-  int get _minPencairan =>
-      ((_dashboardData?['pengaturan_pencairan']?['min_pencairan']) as num?)
-          ?.toInt() ??
-      50000;
-  int get _maksimalPerWarga =>
-      ((_dashboardData?['pengaturan_pencairan']?['maksimal_per_warga']) as num?)
-          ?.toInt() ??
-      0;
-  bool get _jadwalAktif =>
-      (_dashboardData?['pengaturan_pencairan']?['is_active'] as bool?) ?? false;
+  // --- State fields (diisi dari API) ----------------------------------------
+  int _saldo = 0;
+  int _minPencairan = 50000;
+  int _maksimalPerWarga = 0;
+  bool _jadwalAktif = false;
+  String _nextRedeem = '-';
+  Map<String, dynamic>? _pencairanMenunggu;
+  Map<String, dynamic> _kontribusiData = {};
+  List<_AktivitasData> _aktivitasList = [];
+  List<_LeaderboardItem> _klasemenList = [];
+
   double get _progress =>
       _minPencairan > 0 ? (_saldo / _minPencairan).clamp(0.0, 1.0) : 0.0;
+
+  static const Map<String, Color> _medal = {
+    '1': Color(0xFFFFD700),
+    '2': Color(0xFFB0C4DE),
+    '3': Color(0xFFCD7F32),
+  };
 
   late final AnimationController _entranceController;
   late final Animation<double> _bodyFade;
   late final Animation<Offset> _bodySlide;
   late final AnimationController _progressController;
+  late final Animation<double> _progressValue;
   bool _animStarted = false;
   bool _reduceMotion = false;
 
@@ -148,7 +154,6 @@ class _WargaDashboardState extends State<WargaDashboard>
       duration: const Duration(milliseconds: 1400),
       vsync: this,
     );
-    // _progressValue dinamis — bergantung pada _progress getter yang baca API
     _progressValue = Tween<double>(begin: 0, end: 1.0).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic),
     );
@@ -157,7 +162,44 @@ class _WargaDashboardState extends State<WargaDashboard>
 
   Future<void> _loadAllData() async {
     _loadUserData();
-    _loadDashboardData();
+  }
+
+  void _playProgress() {
+    if (!mounted) return;
+    _progressController.reset();
+    if (_reduceMotion) {
+      _progressController.value = 1.0;
+    } else {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) _progressController.forward();
+      });
+    }
+  }
+
+  IconData _resolveIcon(String iconName) {
+    switch (iconName.toLowerCase()) {
+      case 'bottle':
+      case 'plastik':
+      case 'pet':
+        return Icons.local_drink_outlined;
+      case 'paper':
+      case 'kertas':
+      case 'kardus':
+        return Icons.newspaper_outlined;
+      case 'metal':
+      case 'logam':
+      case 'kaleng':
+        return Icons.hardware_outlined;
+      case 'glass':
+      case 'kaca':
+        return Icons.wine_bar_outlined;
+      case 'withdraw':
+      case 'tarik':
+      case 'pencairan':
+        return Icons.payments_outlined;
+      default:
+        return Icons.recycling_rounded;
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -245,9 +287,19 @@ class _WargaDashboardState extends State<WargaDashboard>
     if (!mounted) return;
     setState(() {
       _dashboardData = data;
+      if (data != null) {
+        _saldo = (data['saldo'] as num?)?.toInt() ?? _saldo;
+        _minPencairan = (data['min_pencairan'] as num?)?.toInt() ?? _minPencairan;
+        final pp = data['pengaturan_pencairan'];
+        if (pp != null) {
+          _maksimalPerWarga = (pp['maksimal_per_warga'] as num?)?.toInt() ?? 0;
+          _jadwalAktif = pp['is_active'] == true;
+        }
+        _nextRedeem = data['next_redeem'] ?? _nextRedeem;
+        _pencairanMenunggu = data['pencairan_menunggu'];
+      }
       _isLoadingDashboard = false;
     });
-    // Re-animate progress bar dengan nilai terbaru dari API
     _progressController.reset();
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _progressController.forward();
@@ -1872,7 +1924,14 @@ class _WargaDashboardState extends State<WargaDashboard>
                   Row(
                     children: [
                       for (final v in const [50000, 100000, 150000]) ...[
-                        _buildQuickChip(_rupiah(v)),
+                        Expanded(
+                          child: _NominalChip(
+                            label: _rupiah(v),
+                            selected: false,
+                            enabled: !jadwalTutup && kurang == 0,
+                            onTap: () {},
+                          ),
+                        ),
                         if (v != 150000) const SizedBox(width: 8),
                       ],
                     ],
@@ -2003,15 +2062,6 @@ class _WargaDashboardState extends State<WargaDashboard>
             ),
           ),
         ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(dCtx),
-              child: const Text('OK, Mengerti'),
-            ),
-          ),
-        ],
       ),
     );
   }
