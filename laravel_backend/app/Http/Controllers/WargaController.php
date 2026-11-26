@@ -152,6 +152,16 @@ class WargaController extends Controller
                 'klasemen' => $klasemen,
                 'pengumuman' => $pengumuman,
                 'pencairan_menunggu' => $statusPencairan,
+                'pengaturan_pencairan' => [
+                    'min_pencairan' => $minPencairan,
+                    'maksimal_per_warga' => $pengaturan && $pengaturan->maksimal_per_warga ? (float) $pengaturan->maksimal_per_warga : null,
+                    'kuota_warga' => $pengaturan && $pengaturan->kuota_warga ? (int) $pengaturan->kuota_warga : null,
+                    'maksimal_total_jadwal' => $pengaturan && $pengaturan->maksimal_total_jadwal ? (float) $pengaturan->maksimal_total_jadwal : null,
+                    'tanggal_mulai' => $pengaturan ? Carbon::parse($pengaturan->tanggal_mulai)->format('Y-m-d') : null,
+                    'tanggal_selesai' => $pengaturan ? Carbon::parse($pengaturan->tanggal_selesai)->format('Y-m-d') : null,
+                    'is_active' => $pengaturan ? Carbon::today()->betweenIncluded(Carbon::parse($pengaturan->tanggal_mulai)->startOfDay(), Carbon::parse($pengaturan->tanggal_selesai)->endOfDay()) : true,
+                    'catatan_aturan' => $pengaturan ? $pengaturan->catatan_aturan : null,
+                ],
             ],
         ]);
     }
@@ -181,7 +191,28 @@ class WargaController extends Controller
         }
 
         $pengaturan = PengaturanPencairan::latest('id_pengaturan')->first();
-        $minPencairan = $pengaturan ? (float) $pengaturan->target_minimal : 50000;
+        if (!$pengaturan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengaturan jadwal pencairan belum ditetapkan oleh pengurus.',
+            ], 422);
+        }
+
+        // Cek periode jadwal pencairan
+        $today = Carbon::today();
+        $start = Carbon::parse($pengaturan->tanggal_mulai)->startOfDay();
+        $end = Carbon::parse($pengaturan->tanggal_selesai)->endOfDay();
+        if (!$today->betweenIncluded($start, $end)) {
+            $mulaiFmt = Carbon::parse($pengaturan->tanggal_mulai)->translatedFormat('d M Y');
+            $selesaiFmt = Carbon::parse($pengaturan->tanggal_selesai)->translatedFormat('d M Y');
+            return response()->json([
+                'success' => false,
+                'message' => "Pengajuan pencairan saat ini sedang ditutup. Jadwal aktif dibuka pada periode {$mulaiFmt} s/d {$selesaiFmt}.",
+            ], 422);
+        }
+
+        $minPencairan = (float) $pengaturan->target_minimal;
+        $maxPerWarga = $pengaturan->maksimal_per_warga ? (float) $pengaturan->maksimal_per_warga : null;
 
         $request->validate([
             'nominal' => 'required|numeric|min:' . $minPencairan,
@@ -190,18 +221,50 @@ class WargaController extends Controller
             'nominal.min' => 'Nominal pencairan minimal Rp ' . number_format($minPencairan, 0, ',', '.'),
         ]);
 
-        if ($warga->total_saldo < $request->nominal) {
+        $nominal = (float) $request->nominal;
+
+        if ($warga->total_saldo < $nominal) {
             return response()->json([
                 'success' => false,
-                'message' => 'Saldo Anda (Rp ' . number_format($warga->total_saldo, 0, ',', '.') . ') tidak mencukupi untuk mencairkan Rp ' . number_format($request->nominal, 0, ',', '.'),
+                'message' => 'Saldo Anda (Rp ' . number_format($warga->total_saldo, 0, ',', '.') . ') tidak mencukupi untuk mencairkan Rp ' . number_format($nominal, 0, ',', '.'),
             ], 422);
         }
 
-        if (!$pengaturan) {
+        // Cek batas maksimal per warga
+        if ($maxPerWarga !== null && $nominal > $maxPerWarga) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pengaturan pencairan belum ditetapkan pengurus.',
+                'message' => 'Batas maksimal pencairan per warga untuk jadwal ini adalah Rp ' . number_format($maxPerWarga, 0, ',', '.') . '. Anda dapat mencairkan kembali pada jadwal berikutnya.',
             ], 422);
+        }
+
+        // Cek kuota pendaftar warga dalam jadwal ini
+        if ($pengaturan->kuota_warga !== null && $pengaturan->kuota_warga > 0) {
+            $totalPendaftar = Pencairan::where('id_pengaturan', $pengaturan->id_pengaturan)
+                ->whereIn('status', ['menunggu', 'disetujui'])
+                ->count();
+
+            if ($totalPendaftar >= $pengaturan->kuota_warga) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Mohon maaf, kuota pencairan untuk jadwal ini telah penuh ({$pengaturan->kuota_warga} warga). Silakan ajukan pada periode jadwal berikutnya.",
+                ], 422);
+            }
+        }
+
+        // Cek batas maksimal total dana pencairan jadwal ini (plafon kas posko)
+        if ($pengaturan->maksimal_total_jadwal !== null && $pengaturan->maksimal_total_jadwal > 0) {
+            $totalDanaTerpakai = (float) Pencairan::where('id_pengaturan', $pengaturan->id_pengaturan)
+                ->whereIn('status', ['menunggu', 'disetujui'])
+                ->sum('nominal_pencairan');
+
+            $sisaPlafon = $pengaturan->maksimal_total_jadwal - $totalDanaTerpakai;
+            if ($sisaPlafon <= 0 || $nominal > $sisaPlafon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Plafon total dana kas posko untuk jadwal ini telah tercapai (sisa kuota dana Rp ' . number_format(max(0, $sisaPlafon), 0, ',', '.') . '). Silakan ajukan nominal lebih kecil atau nantikan jadwal berikutnya.',
+                ], 422);
+            }
         }
 
         $pencairan = Pencairan::create([

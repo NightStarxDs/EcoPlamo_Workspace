@@ -691,6 +691,7 @@ class AuthService {
   Future<Map<String, dynamic>> buatPengumuman({
     required String judul,
     required String isi,
+    String? kategori,
   }) async {
     try {
       final baseUrl = await getBaseUrl();
@@ -699,7 +700,11 @@ class AuthService {
           .post(
             Uri.parse('$baseUrl/pengumuman'),
             headers: headers,
-            body: jsonEncode({'judul': judul, 'isi': isi}),
+            body: jsonEncode({
+              'judul': judul,
+              'isi': isi,
+              if (kategori != null) 'kategori': kategori,
+            }),
           )
           .timeout(const Duration(seconds: 10));
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -951,6 +956,37 @@ class AuthService {
     }
   }
 
+  /// POST /api/warga/pencairan — warga mengajukan pencairan saldo
+  Future<Map<String, dynamic>> ajukanPencairan({
+    required double nominal,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/warga/pencairan'),
+            headers: headers,
+            body: jsonEncode({'nominal': nominal}),
+          )
+          .timeout(const Duration(seconds: 15));
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = data['success'] == true ||
+          response.statusCode == 200 ||
+          response.statusCode == 201;
+      return {
+        'success': ok,
+        'message': data['message'] ??
+            (ok
+                ? 'Pengajuan pencairan berhasil dikirim!'
+                : 'Gagal mengajukan pencairan.'),
+        'data': data['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: $e'};
+    }
+  }
+
   // ── Pengaturan Pencairan ────────────────────────────────────────────────────
 
   /// GET /api/pengurus/pengaturan-pencairan
@@ -976,6 +1012,11 @@ class AuthService {
     required double targetMinimal,
     required String tanggalMulai,
     required String tanggalSelesai,
+    double? maksimalPerWarga,
+    int? kuotaWarga,
+    double? maksimalTotalJadwal,
+    String? catatanAturan,
+    bool buatPengumumanOtomatis = false,
   }) async {
     try {
       final baseUrl = await getBaseUrl();
@@ -988,6 +1029,11 @@ class AuthService {
               'target_minimal': targetMinimal,
               'tanggal_mulai': tanggalMulai,
               'tanggal_selesai': tanggalSelesai,
+              if (maksimalPerWarga != null) 'maksimal_per_warga': maksimalPerWarga,
+              if (kuotaWarga != null) 'kuota_warga': kuotaWarga,
+              if (maksimalTotalJadwal != null) 'maksimal_total_jadwal': maksimalTotalJadwal,
+              if (catatanAturan != null && catatanAturan.isNotEmpty) 'catatan_aturan': catatanAturan,
+              'buat_pengumuman_otomatis': buatPengumumanOtomatis,
             }),
           )
           .timeout(const Duration(seconds: 10));
@@ -996,6 +1042,7 @@ class AuthService {
       return {
         'success': ok,
         'message': data['message'] ?? (ok ? 'Pengaturan pencairan tersimpan.' : 'Gagal menyimpan pengaturan.'),
+        'data': data['data'],
       };
     } catch (e) {
       return {'success': false, 'message': 'Koneksi gagal: $e'};

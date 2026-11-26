@@ -24,12 +24,14 @@ Route::get('/katalog', [KatalogController::class, 'index']);
 // Informasi & Pengumuman posko (Public read)
 Route::get('/pengumuman', function () {
     $pengumuman = \App\Models\Pengumuman::orderByDesc('created_at')->get()->map(function ($p) {
-        $kategori = 'Pengumuman';
-        $lower = strtolower($p->judul);
-        if (str_contains($lower, 'jadwal') || str_contains($lower, 'agenda') || str_contains($lower, 'kegiatan')) {
-            $kategori = 'Agenda';
-        } elseif (str_contains($lower, 'tips') || str_contains($lower, 'cara') || str_contains($lower, 'edukasi') || str_contains($lower, 'daur ulang')) {
-            $kategori = 'Edukasi';
+        $kategori = $p->kategori ?? 'Pengumuman';
+        if ($kategori === 'Pengumuman') {
+            $lower = strtolower($p->judul);
+            if (str_contains($lower, 'jadwal') || str_contains($lower, 'agenda') || str_contains($lower, 'kegiatan') || str_contains($lower, 'pencairan')) {
+                $kategori = 'Agenda';
+            } elseif (str_contains($lower, 'tips') || str_contains($lower, 'cara') || str_contains($lower, 'edukasi') || str_contains($lower, 'daur ulang')) {
+                $kategori = 'Edukasi';
+            }
         }
         return [
             'id' => $p->id_pengumuman,

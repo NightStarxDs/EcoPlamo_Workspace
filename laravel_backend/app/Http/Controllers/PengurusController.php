@@ -110,7 +110,7 @@ class PengurusController extends Controller
      */
     public function getDaftarVerifikasi(Request $request)
     {
-        $status = $request->query('status', 'menunggu'); // menunggu | terverifikasi | ditolak | semua
+        $status = $request->query('status', 'menunggu');
         $search = $request->query('search', '');
 
         $query = Warga::with(['user:id_pengguna,nama_lengkap,no_whatsapp,created_at']);
@@ -147,7 +147,6 @@ class PengurusController extends Controller
             ];
         });
 
-        // Hitung statistik ringkasan
         $counts = [
             'menunggu'      => Warga::where('status_verifikasi', 'menunggu')->count(),
             'terverifikasi' => Warga::where('status_verifikasi', 'terverifikasi')->count(),
@@ -247,20 +246,23 @@ class PengurusController extends Controller
     }
 
     /**
-     * Mengambil daftar seluruh warga dari database.
+     * Mengambil daftar seluruh warga beserta ringkasan saldo & setoran.
      * GET /api/pengurus/warga-list
      */
     public function wargaList()
     {
         $wargas = Warga::with(['user', 'setoran'])->get()->map(function ($w) {
+            $totalSetoran = $w->setoran->count();
+            $totalBerat = (float) $w->setoran->sum('total_berat_kg');
             return [
-                'id_pengguna' => $w->id_pengguna,
+                'id_warga' => $w->id_pengguna,
                 'nama_lengkap' => $w->user ? $w->user->nama_lengkap : 'Warga',
                 'no_whatsapp' => $w->user ? $w->user->no_whatsapp : '-',
                 'alamat' => $w->alamat ?? '-',
                 'total_saldo' => (float) $w->total_saldo,
-                'total_setoran_kg' => (float) ($w->setoran ? $w->setoran->sum('total_berat_kg') : 0),
-                'jumlah_setoran' => $w->setoran ? $w->setoran->count() : 0,
+                'total_setoran' => $totalSetoran,
+                'total_berat_kg' => $totalBerat,
+                'status_verifikasi' => $w->status_verifikasi ?? 'terverifikasi',
             ];
         });
 
@@ -271,52 +273,27 @@ class PengurusController extends Controller
     }
 
     /**
-     * Pencarian warga: baik lewat teks manual maupun decode scan QR (ID atau WhatsApp).
-     * GET /api/warga/search atau GET /api/pengurus/warga-search
+     * Pencarian warga secara cepat berdasarkan nama / alamat / whatsapp.
+     * GET /api/pengurus/warga-search?q=
      */
     public function wargaSearch(Request $request)
     {
         $q = trim((string) $request->get('q', ''));
-
-        if ($q === '') {
+        if (empty($q)) {
             return response()->json(['success' => true, 'data' => []]);
         }
 
-        $resolvedId = null;
-        if (preg_match('/^ECOPLAMO:WARGA:(\d+)/i', $q, $matches)) {
-            $resolvedId = (int) $matches[1];
-        } elseif (preg_match('/^ECP-(\d+)/i', $q, $matches)) {
-            $resolvedId = (int) $matches[1];
-        }
-
-        if ($resolvedId) {
-            $warga = Warga::with('user')->find($resolvedId);
-            if ($warga && $warga->user) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [[
-                        'id_pengguna' => $warga->id_pengguna,
-                        'nama_lengkap' => $warga->user->nama_lengkap,
-                        'no_whatsapp' => $warga->user->no_whatsapp,
-                        'alamat' => $warga->alamat ?? '-',
-                        'total_saldo' => (float) $warga->total_saldo,
-                    ]],
-                ]);
-            }
-        }
-
-        $wargas = Warga::with('user')
-            ->where(function ($outer) use ($q) {
-                $outer->whereHas('user', function ($query) use ($q) {
-                    $query->where('nama_lengkap', 'like', "%{$q}%")
-                          ->orWhere('no_whatsapp', 'like', "%{$q}%");
-                })->orWhere('alamat', 'like', "%{$q}%");
+        $results = Warga::with('user')
+            ->whereHas('user', function ($query) use ($q) {
+                $query->where('nama_lengkap', 'like', "%{$q}%")
+                      ->orWhere('no_whatsapp', 'like', "%{$q}%");
             })
-            ->limit(15)
+            ->orWhere('alamat', 'like', "%{$q}%")
+            ->limit(10)
             ->get()
             ->map(function ($w) {
                 return [
-                    'id_pengguna' => $w->id_pengguna,
+                    'id_warga' => $w->id_pengguna,
                     'nama_lengkap' => $w->user ? $w->user->nama_lengkap : 'Warga',
                     'no_whatsapp' => $w->user ? $w->user->no_whatsapp : '-',
                     'alamat' => $w->alamat ?? '-',
@@ -326,13 +303,13 @@ class PengurusController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $wargas,
+            'data' => $results,
         ]);
     }
 
     /**
-     * Pengurus mencatat setoran penimbangan sampah warga.
-     * POST /api/setoran atau POST /api/pengurus/setoran
+     * Mencatat transaksi setoran sampah warga.
+     * POST /api/pengurus/setoran
      */
     public function catatSetoran(Request $request)
     {
@@ -342,123 +319,110 @@ class PengurusController extends Controller
             'id_warga' => 'required|exists:warga,id_pengguna',
             'items' => 'required|array|min:1',
             'items.*.id_kategori' => 'required|exists:kategori_sampah,id_kategori',
-            'items.*.berat_kg' => 'required|numeric|min:0.01',
-        ], [
-            'id_warga.required' => 'Warga wajib dipilih.',
-            'items.required' => 'Minimal harus ada 1 item sampah yang ditimbang.',
-            'items.*.berat_kg.min' => 'Berat sampah minimal 0.01 Kg.',
+            'items.*.berat_kg' => 'required|numeric|min:0.1',
         ]);
 
         return DB::transaction(function () use ($request, $user) {
-            $warga = Warga::findOrFail($request->id_warga);
-
-            $totalBerat = 0;
-            $totalNilai = 0;
-            $detailsData = [];
+            $totalBerat = 0.0;
+            $totalNilai = 0.0;
+            $detailData = [];
 
             foreach ($request->items as $item) {
                 $kategori = KategoriSampah::findOrFail($item['id_kategori']);
                 $berat = (float) $item['berat_kg'];
-                $harga = (float) $kategori->harga_per_kg;
-                $subtotal = round($berat * $harga, 2);
+                $subtotal = $berat * (float) $kategori->harga_per_satuan;
 
                 $totalBerat += $berat;
                 $totalNilai += $subtotal;
 
-                $detailsData[] = [
+                $detailData[] = [
                     'id_kategori' => $kategori->id_kategori,
                     'berat_kg' => $berat,
-                    'harga_saat_setor' => $harga,
                     'subtotal_rp' => $subtotal,
                 ];
             }
 
-            // 1. Simpan Header Setoran
             $setoran = Setoran::create([
-                'id_warga' => $warga->id_pengguna,
+                'id_warga' => $request->id_warga,
                 'id_pengurus' => $user->id_pengguna,
-                'tanggal' => Carbon::today(),
+                'tanggal' => Carbon::now(),
                 'total_berat_kg' => $totalBerat,
                 'total_nilai_rp' => $totalNilai,
             ]);
 
-            // 2. Simpan Detail Setoran
-            foreach ($detailsData as $d) {
-                DetailSetoran::create([
-                    'id_setoran' => $setoran->id_setoran,
-                    'id_kategori' => $d['id_kategori'],
-                    'berat_kg' => $d['berat_kg'],
-                    'harga_saat_setor' => $d['harga_saat_setor'],
-                    'subtotal_rp' => $d['subtotal_rp'],
-                ]);
+            foreach ($detailData as $d) {
+                $d['id_setoran'] = $setoran->id_setoran;
+                DetailSetoran::create($d);
             }
 
-            // 3. Tambah Saldo Warga
-            $warga->total_saldo = (float) $warga->total_saldo + $totalNilai;
+            // Tambah saldo warga
+            $warga = Warga::findOrFail($request->id_warga);
+            $saldoSebelumnya = (float) $warga->total_saldo;
+            $saldoSesudahnya = $saldoSebelumnya + $totalNilai;
+            $warga->total_saldo = $saldoSesudahnya;
             $warga->save();
 
-            // 4. Catat Mutasi Saldo (Kredit)
+            // Catat ke mutasi saldo (kredit)
             MutasiSaldo::create([
                 'id_warga' => $warga->id_pengguna,
                 'id_setoran' => $setoran->id_setoran,
-                'id_pencairan' => null,
                 'tipe' => 'kredit',
                 'nominal' => $totalNilai,
-                'saldo_setelah_mutasi' => $warga->total_saldo,
+                'saldo_sebelumnya' => $saldoSebelumnya,
+                'saldo_sesudahnya' => $saldoSesudahnya,
+                'keterangan' => 'Setor Sampah (' . number_format($totalBerat, 1, ',', '.') . ' Kg)',
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Setoran sampah berhasil disimpan! Saldo warga bertambah Rp ' . number_format($totalNilai, 0, ',', '.'),
+                'message' => 'Setoran sampah berhasil dicatat!',
                 'data' => [
                     'id_setoran' => $setoran->id_setoran,
                     'total_berat_kg' => $totalBerat,
                     'total_nilai_rp' => $totalNilai,
-                    'saldo_terbaru' => (float) $warga->total_saldo,
+                    'total_saldo_sekarang' => $saldoSesudahnya,
                 ],
             ], 201);
         });
     }
 
     /**
-     * Mengambil daftar antrean pengajuan pencairan saldo warga.
-     * GET /api/pencairan atau GET /api/pengurus/pencairan
+     * Mengambil daftar pencairan dana warga untuk validasi pengurus.
+     * GET /api/pengurus/pencairan
      */
     public function pencairanList(Request $request)
     {
         $status = $request->get('status');
 
-        $query = Pencairan::with(['warga.user', 'pengurusValidasi.user'])
-            ->orderByDesc('created_at');
-
+        $query = Pencairan::with(['warga.user', 'pengurusValidasi.user']);
         if ($status && in_array($status, ['menunggu', 'disetujui', 'ditolak'])) {
             $query->where('status', $status);
         }
 
-        $pencairans = $query->limit(50)->get()->map(function ($p) {
+        $pencairan = $query->orderByDesc('tanggal_pengajuan')->get()->map(function ($p) {
             return [
                 'id_pencairan' => $p->id_pencairan,
                 'id_warga' => $p->id_warga,
                 'nama_warga' => $p->warga && $p->warga->user ? $p->warga->user->nama_lengkap : 'Warga',
                 'no_whatsapp' => $p->warga && $p->warga->user ? $p->warga->user->no_whatsapp : '-',
-                'alamat' => $p->warga ? ($p->warga->alamat ?? '-') : '-',
+                'alamat' => $p->warga ? $p->warga->alamat : '-',
                 'nominal_pencairan' => (float) $p->nominal_pencairan,
                 'status' => $p->status,
-                'tanggal_pengajuan' => $p->tanggal_pengajuan ? Carbon::parse($p->tanggal_pengajuan)->translatedFormat('d M Y, H:i') : '-',
-                'tanggal_validasi' => $p->tanggal_validasi ? Carbon::parse($p->tanggal_validasi)->translatedFormat('d M Y, H:i') : null,
+                'tanggal_pengajuan' => $p->tanggal_pengajuan ? Carbon::parse($p->tanggal_pengajuan)->format('d M Y, H:i') : '-',
+                'tanggal_validasi' => $p->tanggal_validasi ? Carbon::parse($p->tanggal_validasi)->format('d M Y, H:i') : null,
                 'validasi_oleh' => $p->pengurusValidasi && $p->pengurusValidasi->user ? $p->pengurusValidasi->user->nama_lengkap : null,
             ];
         });
 
         return response()->json([
             'success' => true,
-            'data' => $pencairans,
+            'data' => $pencairan,
         ]);
     }
 
     /**
-     * Memvalidasi pengajuan pencairan saldo warga (Setujui / Tolak).
-     * POST /api/pencairan/{id}/validasi atau POST /api/pengurus/pencairan/{id}/validasi
+     * Memvalidasi pengajuan pencairan (setujui / tolak).
+     * POST /api/pengurus/pencairan/{id}/validasi
      */
     public function validasiPencairan(Request $request, $id)
     {
@@ -466,68 +430,62 @@ class PengurusController extends Controller
 
         $request->validate([
             'aksi' => 'required|in:setujui,tolak',
-        ], [
-            'aksi.required' => 'Aksi validasi (setujui / tolak) wajib ditentukan.',
         ]);
 
         return DB::transaction(function () use ($request, $user, $id) {
-            $pencairan = Pencairan::with('warga')->findOrFail($id);
+            $pencairan = Pencairan::findOrFail($id);
 
             if ($pencairan->status !== 'menunggu') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Pengajuan pencairan ini sudah diproses sebelumnya (' . $pencairan->status . ').',
+                    'message' => 'Pengajuan pencairan ini sudah diproses sebelumnya.',
                 ], 422);
             }
 
-            $warga = $pencairan->warga;
+            $warga = Warga::findOrFail($pencairan->id_warga);
+            $aksi = $request->aksi;
 
-            if ($request->aksi === 'setujui') {
+            if ($aksi === 'setujui') {
                 if ($warga->total_saldo < $pencairan->nominal_pencairan) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Saldo warga tidak mencukupi (Tersisa: Rp ' . number_format($warga->total_saldo, 0, ',', '.') . ').',
+                        'message' => 'Saldo warga tidak mencukupi untuk disetujui.',
                     ], 422);
                 }
 
-                // 1. Kurangi Saldo Warga
-                $warga->total_saldo = (float) $warga->total_saldo - (float) $pencairan->nominal_pencairan;
+                $saldoSebelumnya = (float) $warga->total_saldo;
+                $saldoSesudahnya = $saldoSebelumnya - (float) $pencairan->nominal_pencairan;
+                $warga->total_saldo = $saldoSesudahnya;
                 $warga->save();
 
-                // 2. Update Status Pencairan
-                $pencairan->status = 'disetujui';
-                $pencairan->id_pengurus_validasi = $user->id_pengguna;
-                $pencairan->tanggal_validasi = Carbon::now();
-                $pencairan->save();
-
-                // 3. Catat Mutasi Saldo (Debit)
+                // Catat ke mutasi debit
                 MutasiSaldo::create([
                     'id_warga' => $warga->id_pengguna,
-                    'id_setoran' => null,
                     'id_pencairan' => $pencairan->id_pencairan,
                     'tipe' => 'debit',
                     'nominal' => $pencairan->nominal_pencairan,
-                    'saldo_setelah_mutasi' => $warga->total_saldo,
+                    'saldo_sebelumnya' => $saldoSebelumnya,
+                    'saldo_sesudahnya' => $saldoSesudahnya,
+                    'keterangan' => 'Pencairan Saldo Tunai',
                 ]);
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pencairan dana sebesar Rp ' . number_format($pencairan->nominal_pencairan, 0, ',', '.') . ' disetujui.',
-                    'data' => $pencairan,
-                ]);
+                $pencairan->status = 'disetujui';
             } else {
-                // Aksi Tolak
                 $pencairan->status = 'ditolak';
-                $pencairan->id_pengurus_validasi = $user->id_pengguna;
-                $pencairan->tanggal_validasi = Carbon::now();
-                $pencairan->save();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pengajuan pencairan dana ditolak.',
-                    'data' => $pencairan,
-                ]);
             }
+
+            $pencairan->id_pengurus_validasi = $user->id_pengguna;
+            $pencairan->tanggal_validasi = Carbon::now();
+            $pencairan->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan pencairan berhasil ' . ($aksi === 'setujui' ? 'disetujui' : 'ditolak') . '.',
+                'data' => [
+                    'id_pencairan' => $pencairan->id_pencairan,
+                    'status' => $pencairan->status,
+                ],
+            ]);
         });
     }
 
@@ -540,20 +498,42 @@ class PengurusController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'judul' => 'required|string|max:255',
+            'judul' => 'required|string|max:200',
             'isi' => 'required|string',
+            'kategori' => 'nullable|string|max:50',
         ]);
+
+        $kategori = $request->kategori;
+        if (empty($kategori)) {
+            $lower = strtolower($request->judul);
+            if (str_contains($lower, 'jadwal') || str_contains($lower, 'agenda') || str_contains($lower, 'kegiatan') || str_contains($lower, 'pencairan')) {
+                $kategori = 'Agenda';
+            } elseif (str_contains($lower, 'tips') || str_contains($lower, 'cara') || str_contains($lower, 'edukasi') || str_contains($lower, 'daur ulang')) {
+                $kategori = 'Edukasi';
+            } else {
+                $kategori = 'Pengumuman';
+            }
+        }
 
         $pengumuman = Pengumuman::create([
             'id_pengurus' => $user->id_pengguna,
             'judul' => $request->judul,
+            'kategori' => $kategori,
             'isi' => $request->isi,
+            'created_at' => Carbon::now(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Pengumuman posko berhasil diterbitkan!',
-            'data' => $pengumuman,
+            'data' => [
+                'id' => $pengumuman->id_pengumuman,
+                'judul' => $pengumuman->judul,
+                'kategori' => $pengumuman->kategori,
+                'isi' => $pengumuman->isi,
+                'tanggal' => Carbon::parse($pengumuman->created_at)->translatedFormat('d M Y'),
+                'created_at' => $pengumuman->created_at,
+            ],
         ], 201);
     }
 
@@ -576,25 +556,62 @@ class PengurusController extends Controller
     }
 
     /**
-     * Mengambil Pengaturan Pencairan Terkini (Target Minimal & Periode)
+     * Mengambil Pengaturan Pencairan Terkini (Target Minimal, Maksimal per Warga, Kuota, Plafon, & Periode)
      * GET /api/pengurus/pengaturan-pencairan
      */
     public function getPengaturanPencairan(Request $request)
     {
         $aturan = PengaturanPencairan::latest('id_pengaturan')->first();
 
+        $targetMinimal = $aturan ? (float) $aturan->target_minimal : 50000.0;
+        $maksimalPerWarga = $aturan && $aturan->maksimal_per_warga !== null ? (float) $aturan->maksimal_per_warga : 200000.0;
+        $kuotaWarga = $aturan && $aturan->kuota_warga !== null ? (int) $aturan->kuota_warga : 25;
+        $maksimalTotalJadwal = $aturan && $aturan->maksimal_total_jadwal !== null ? (float) $aturan->maksimal_total_jadwal : 2500000.0;
+        $catatanAturan = $aturan ? $aturan->catatan_aturan : null;
+
+        $tglMulai = $aturan && $aturan->tanggal_mulai ? Carbon::parse($aturan->tanggal_mulai)->format('Y-m-d') : Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tglSelesai = $aturan && $aturan->tanggal_selesai ? Carbon::parse($aturan->tanggal_selesai)->format('Y-m-d') : Carbon::now()->endOfMonth()->format('Y-m-d');
+
+        // Hitung real-time pendaftar dan total dana pada periode jadwal ini
+        $pencairanQuery = Pencairan::where('id_pengaturan', $aturan ? $aturan->id_pengaturan : 0)
+            ->whereIn('status', ['menunggu', 'disetujui']);
+
+        $totalPendaftar = (int) (clone $pencairanQuery)->count();
+        $totalDanaTerpakai = (float) (clone $pencairanQuery)->sum('nominal_pencairan');
+
+        $today = Carbon::today();
+        $start = Carbon::parse($tglMulai)->startOfDay();
+        $end = Carbon::parse($tglSelesai)->endOfDay();
+        $isActive = $today->betweenIncluded($start, $end);
+
+        $sisaKuota = $kuotaWarga > 0 ? max(0, $kuotaWarga - $totalPendaftar) : null;
+        $sisaPlafon = $maksimalTotalJadwal > 0 ? max(0, $maksimalTotalJadwal - $totalDanaTerpakai) : null;
+
         return response()->json([
             'success' => true,
             'data' => [
-                'target_minimal' => $aturan ? (float) $aturan->target_minimal : 50000.0,
-                'tanggal_mulai' => $aturan && $aturan->tanggal_mulai ? Carbon::parse($aturan->tanggal_mulai)->format('Y-m-d') : Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'tanggal_selesai' => $aturan && $aturan->tanggal_selesai ? Carbon::parse($aturan->tanggal_selesai)->format('Y-m-d') : Carbon::now()->endOfMonth()->format('Y-m-d'),
+                'id_pengaturan' => $aturan ? $aturan->id_pengaturan : null,
+                'target_minimal' => $targetMinimal,
+                'maksimal_per_warga' => $maksimalPerWarga,
+                'kuota_warga' => $kuotaWarga,
+                'maksimal_total_jadwal' => $maksimalTotalJadwal,
+                'tanggal_mulai' => $tglMulai,
+                'tanggal_selesai' => $tglSelesai,
+                'catatan_aturan' => $catatanAturan,
+                'is_active' => $isActive,
+                'statistik' => [
+                    'total_pendaftar' => $totalPendaftar,
+                    'kuota_terpakai' => $totalPendaftar,
+                    'sisa_kuota' => $sisaKuota,
+                    'total_dana_terpakai' => $totalDanaTerpakai,
+                    'sisa_plafon_dana' => $sisaPlafon,
+                ],
             ],
         ]);
     }
 
     /**
-     * Menyimpan atau Memperbarui Aturan Pengaturan Pencairan oleh Pengurus
+     * Menyimpan atau Memperbarui Aturan Pengaturan Pencairan oleh Pengurus.
      * POST /api/pengurus/pengaturan-pencairan
      */
     public function simpanPengaturanPencairan(Request $request)
@@ -603,26 +620,66 @@ class PengurusController extends Controller
 
         $request->validate([
             'target_minimal' => 'required|numeric|min:5000',
+            'maksimal_per_warga' => 'nullable|numeric|min:5000',
+            'kuota_warga' => 'nullable|integer|min:1',
+            'maksimal_total_jadwal' => 'nullable|numeric|min:5000',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_selesai' => 'nullable|date',
+            'catatan_aturan' => 'nullable|string|max:500',
+            'buat_pengumuman_otomatis' => 'nullable|boolean',
         ]);
 
         $aturan = PengaturanPencairan::create([
             'id_pengurus' => $user->id_pengguna,
             'target_minimal' => $request->target_minimal,
+            'maksimal_per_warga' => $request->maksimal_per_warga,
+            'kuota_warga' => $request->kuota_warga,
+            'maksimal_total_jadwal' => $request->maksimal_total_jadwal,
             'tanggal_mulai' => $request->tanggal_mulai ?? Carbon::now(),
             'tanggal_selesai' => $request->tanggal_selesai ?? Carbon::now()->endOfMonth(),
+            'catatan_aturan' => $request->catatan_aturan,
             'created_at' => Carbon::now(),
         ]);
 
+        // Jika opsi buat pengumuman otomatis dicentang
+        if ($request->boolean('buat_pengumuman_otomatis')) {
+            $tglMulaiFmt = Carbon::parse($aturan->tanggal_mulai)->translatedFormat('d M Y');
+            $tglSelesaiFmt = Carbon::parse($aturan->tanggal_selesai)->translatedFormat('d M Y');
+            $maxPerWargaFmt = $aturan->maksimal_per_warga ? 'Rp ' . number_format($aturan->maksimal_per_warga, 0, ',', '.') : 'Sesuai saldo';
+            $kuotaFmt = $aturan->kuota_warga ? "{$aturan->kuota_warga} warga" : 'Tidak dibatasi';
+
+            $judulPengumuman = "Jadwal & Aturan Pencairan Kas Posko ({$tglMulaiFmt} - {$tglSelesaiFmt})";
+            $isiPengumuman = "Diberitahukan kepada seluruh warga bank sampah Eco Plamo:\n"
+                . "Periode pengajuan pencairan saldo kas dibuka mulai {$tglMulaiFmt} s/d {$tglSelesaiFmt}.\n\n"
+                . "Ketentuan & Aturan Pencairan:\n"
+                . "• Saldo minimal penarikan: Rp " . number_format($aturan->target_minimal, 0, ',', '.') . "\n"
+                . "• Batas maksimal per warga: {$maxPerWargaFmt}\n"
+                . "• Kuota antrean jadwal ini: {$kuotaFmt}\n"
+                . ($aturan->maksimal_total_jadwal ? "• Total plafon kas posko periode ini: Rp " . number_format($aturan->maksimal_total_jadwal, 0, ',', '.') . "\n" : "")
+                . ($aturan->catatan_aturan ? "\nCatatan Tambahan: {$aturan->catatan_aturan}\n" : "\n")
+                . "Warga yang memenuhi syarat dapat langsung mengajukan klaim melalui aplikasi pada menu Tarik Saldo.";
+
+            Pengumuman::create([
+                'id_pengurus' => $user->id_pengguna,
+                'judul' => $judulPengumuman,
+                'kategori' => 'Agenda',
+                'isi' => $isiPengumuman,
+                'created_at' => Carbon::now(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Aturan pencairan dana berhasil diperbarui!',
+            'message' => 'Aturan pencairan dana berhasil diperbarui' . ($request->boolean('buat_pengumuman_otomatis') ? ' & pengumuman posko diterbitkan!' : '!'),
             'data' => [
                 'id_pengaturan' => $aturan->id_pengaturan,
                 'target_minimal' => (float) $aturan->target_minimal,
+                'maksimal_per_warga' => $aturan->maksimal_per_warga ? (float) $aturan->maksimal_per_warga : null,
+                'kuota_warga' => $aturan->kuota_warga ? (int) $aturan->kuota_warga : null,
+                'maksimal_total_jadwal' => $aturan->maksimal_total_jadwal ? (float) $aturan->maksimal_total_jadwal : null,
                 'tanggal_mulai' => $aturan->tanggal_mulai,
                 'tanggal_selesai' => $aturan->tanggal_selesai,
+                'catatan_aturan' => $aturan->catatan_aturan,
             ],
         ]);
     }

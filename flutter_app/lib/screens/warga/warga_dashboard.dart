@@ -59,34 +59,30 @@ class WargaDashboard extends StatefulWidget {
 
 class _WargaDashboardState extends State<WargaDashboard>
     with TickerProviderStateMixin {
-  int _saldo = 0;
-  int _minPencairan = 50000;
-  String _nextRedeem = '-';
-  Map<String, dynamic>? _pencairanMenunggu;
-  Map<String, dynamic> _kontribusiData = {
-    'total_sampah_kg': 0,
-    'total_dicairkan_rp': 0,
-    'jumlah_setoran': 0,
-    'peringkat': '#1',
-  };
-  List<_AktivitasData> _aktivitasList = [];
-  List<_LeaderboardItem> _klasemenList = [];
-  static const String _fallbackName = 'Warga Eco Plamo';
-
-  // Medali: putih di atasnya >= 4.7:1 (emas 4.9, perak 4.8, perunggu 7.3).
-  static const Map<int, Color> _medal = {
-    1: Color(0xFFA16207),
-    2: Color(0xFF64748B),
-    3: Color(0xFF9A3412),
-  };
-
-  double get _progress =>
-      _minPencairan > 0 ? (_saldo / _minPencairan).clamp(0.0, 1.0) : 0.0;
+  static const String _fallbackName = 'Warga';
 
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _currentUser;
+  Map<String, dynamic>? _dashboardData; // data dari GET /api/warga/dashboard
   bool _isLoadingUser = true;
+  bool _isLoadingDashboard = true;
   bool _balanceVisible = true;
+  bool _isSubmittingPencairan = false;
+
+  // --- Getters data API (dengan fallback) ------------------------------------
+  int get _saldo => (_dashboardData?['saldo'] as num?)?.toInt() ?? 0;
+  int get _minPencairan =>
+      ((_dashboardData?['pengaturan_pencairan']?['min_pencairan']) as num?)
+          ?.toInt() ??
+      50000;
+  int get _maksimalPerWarga =>
+      ((_dashboardData?['pengaturan_pencairan']?['maksimal_per_warga']) as num?)
+          ?.toInt() ??
+      0;
+  bool get _jadwalAktif =>
+      (_dashboardData?['pengaturan_pencairan']?['is_active'] as bool?) ?? false;
+  double get _progress =>
+      _minPencairan > 0 ? (_saldo / _minPencairan).clamp(0.0, 1.0) : 0.0;
 
   late final AnimationController _entranceController;
   late final Animation<double> _bodyFade;
@@ -129,7 +125,7 @@ class _WargaDashboardState extends State<WargaDashboard>
   void initState() {
     super.initState();
     _initAnimations();
-    _loadUserData();
+    _loadAllData();
   }
 
   void _initAnimations() {
@@ -152,47 +148,16 @@ class _WargaDashboardState extends State<WargaDashboard>
       duration: const Duration(milliseconds: 1400),
       vsync: this,
     );
+    // _progressValue dinamis — bergantung pada _progress getter yang baca API
+    _progressValue = Tween<double>(begin: 0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic),
+    );
+    _entranceController.forward();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // WCAG 2.3.3 — hormati pengaturan "kurangi gerakan" milik OS.
-    _reduceMotion = MediaQuery.disableAnimationsOf(context);
-    if (_animStarted) return;
-    _animStarted = true;
-    if (_reduceMotion) {
-      _entranceController.value = 1;
-      _progressController.value = 1;
-    } else {
-      _entranceController.forward();
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _progressController.forward();
-      });
-    }
-  }
-
-  void _playProgress() {
-    if (_reduceMotion) {
-      _progressController.value = 1;
-    } else {
-      _progressController.forward(from: 0);
-    }
-  }
-
-  IconData _resolveIcon(String iconKey) {
-    switch (iconKey) {
-      case 'water_drop_outlined':
-        return Icons.water_drop_outlined;
-      case 'inventory_2_outlined':
-        return Icons.inventory_2_outlined;
-      case 'recycling_rounded':
-        return Icons.recycling_rounded;
-      case 'oil_barrel_rounded':
-        return Icons.water_damage_outlined;
-      default:
-        return Icons.delete_outline_rounded;
-    }
+  Future<void> _loadAllData() async {
+    _loadUserData();
+    _loadDashboardData();
   }
 
   Future<void> _loadUserData() async {
@@ -271,6 +236,22 @@ class _WargaDashboardState extends State<WargaDashboard>
   void _toggleBalance() {
     HapticFeedback.selectionClick();
     setState(() => _balanceVisible = !_balanceVisible);
+  }
+
+  Future<void> _loadDashboardData() async {
+    if (!mounted) return;
+    setState(() => _isLoadingDashboard = true);
+    final data = await _authService.getWargaDashboard();
+    if (!mounted) return;
+    setState(() {
+      _dashboardData = data;
+      _isLoadingDashboard = false;
+    });
+    // Re-animate progress bar dengan nilai terbaru dari API
+    _progressController.reset();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _progressController.forward();
+    });
   }
 
   Future<void> _handleLogout() async {
@@ -367,7 +348,7 @@ class _WargaDashboardState extends State<WargaDashboard>
         onScanTap: onScanTap,
         child: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: _loadUserData,
+          onRefresh: _loadAllData,
           child: FadeTransition(
             opacity: _bodyFade,
             child: SlideTransition(
@@ -810,7 +791,7 @@ class _WargaDashboardState extends State<WargaDashboard>
             child: AnimatedBuilder(
               animation: _progressController,
               builder: (_, _) => LinearProgressIndicator(
-                value: (_progressController.value * _progress).clamp(0.0, 1.0),
+                value: _progressValue.value * _progress,
                 backgroundColor: _onGreen(0.18),
                 valueColor: const AlwaysStoppedAnimation<Color>(_progressFill),
                 minHeight: 8,
@@ -1667,481 +1648,359 @@ class _WargaDashboardState extends State<WargaDashboard>
   void _showPencairanBottomSheet() {
     final int kurang = (_minPencairan - _saldo).clamp(0, _minPencairan);
     final int persen = (_progress * 100).round();
-    final nominalCtrl = TextEditingController(
-      text: _saldo >= _minPencairan
-          ? _minPencairan.toString()
-          : _saldo.toString(),
-    );
-    int selectedNominal = _saldo >= _minPencairan ? _minPencairan : _saldo;
-    bool isSubmitting = false;
+    final bool jadwalTutup = !_jadwalAktif;
+    final bool saldomKurang = kurang > 0;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setMState) {
-          // WCAG 3.3.1 — galat ditampilkan inline sebagai teks di bawah field.
-          // (Snackbar sebelumnya muncul DI BELAKANG bottom sheet & hilang cepat.)
-          String? nominalError;
-          if (kurang == 0) {
-            if (selectedNominal < _minPencairan) {
-              nominalError = 'Minimal pencairan ${_rupiah(_minPencairan)}';
-            } else if (selectedNominal > _saldo) {
-              nominalError = 'Melebihi saldo tersedia (${_rupiah(_saldo)})';
-            }
-          }
-          final bool canSubmit =
-              kurang == 0 && !isSubmitting && nominalError == null;
-
-          void pick(int value) {
-            HapticFeedback.lightImpact();
-            setMState(() {
-              selectedNominal = value;
-              nominalCtrl.text = value.toString();
-              nominalCtrl.selection = TextSelection.collapsed(
-                offset: nominalCtrl.text.length,
-              );
-            });
-          }
-
-          return Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.border,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Semantics(
-                      header: true,
-                      child: Text('Pencairan Tunai', style: AppTypography.h2()),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Pilih nominal atau ketik manual untuk mengajukan klaim',
-                      style: AppTypography.bodyMedium(),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Saldo card
-                    Container(
-                      padding: const EdgeInsets.all(16),
+        builder: (ctx2, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary, AppColors.primaryDark],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.wallet_outlined,
-                                color: _onGreen(),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  'Saldo tersedia',
-                                  style: AppTypography.caption(
-                                    color: _onGreen(),
-                                  ),
-                                ),
-                              ),
-                              if (kurang > 0)
-                                Text(
-                                  'Kurang ${_rupiah(kurang)}',
-                                  style: AppTypography.caption(
-                                    color: Colors.white,
-                                  ).copyWith(fontWeight: FontWeight.w600),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _rupiah(_saldo),
-                              style: AppTypography.h1(color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '$persen% menuju minimum',
-                                  style: AppTypography.caption(
-                                    color: _onGreen(),
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'Min. ${_rupiah(_minPencairan)}',
-                                style: AppTypography.caption(color: _onGreen()),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: _progress,
-                              backgroundColor: _onGreen(0.2),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                _progressFill,
-                              ),
-                              minHeight: 8,
-                              semanticsLabel:
-                                  'Progres menuju minimum pencairan',
-                              semanticsValue: '$persen persen',
-                            ),
-                          ),
-                        ],
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text('Pencairan Tunai', style: AppTypography.h2()),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ajukan saldo tabungan ke kas posko',
+                    style: AppTypography.bodyMedium(),
+                  ),
+                  const SizedBox(height: 16),
 
-                    if (kurang > 0) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _warningTint(),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.warningDark.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.info_outline_rounded,
-                              color: AppColors.warningDark,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Saldo belum cukup. Kumpulkan ${_rupiah(kurang)} lagi untuk mencapai syarat minimum.',
-                                // Pesan penting -> 14sp (bodyMedium), bukan caption 12sp.
-                                style: AppTypography.bodyMedium(
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 20),
-                    Text(
-                      'Pilihan Cepat Nominal',
-                      style: AppTypography.formLabel(),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Chip 2x2, tinggi ≥48dp, label penuh "Rp 150.000" tanpa terpotong.
-                    LayoutBuilder(
-                      builder: (_, c) {
-                        final w = (c.maxWidth - 8) / 2;
-                        return Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final val in const [50000, 100000, 150000])
-                              SizedBox(
-                                width: w,
-                                child: _NominalChip(
-                                  label: _rupiah(val),
-                                  selected: selectedNominal == val,
-                                  enabled: val <= _saldo && !isSubmitting,
-                                  onTap: () => pick(val),
-                                ),
-                              ),
-                            SizedBox(
-                              width: w,
-                              child: _NominalChip(
-                                label: 'Semua saldo',
-                                semanticLabel:
-                                    'Semua saldo, ${_rupiah(_saldo)}',
-                                selected:
-                                    _saldo > 0 && selectedNominal == _saldo,
-                                enabled: _saldo > 0 && !isSubmitting,
-                                onTap: () => pick(_saldo),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Border/fokus/galat diwarisi dari AppTheme.inputDecorationTheme
-                    // (border 3.3:1, fokus 1.5dp, galat merah 4.8:1).
-                    TextField(
-                      controller: nominalCtrl,
-                      enabled: !isSubmitting,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: (val) {
-                        setMState(
-                          () => selectedNominal = int.tryParse(val) ?? 0,
-                        );
-                      },
-                      style: AppTypography.h3(),
-                      decoration: InputDecoration(
-                        // Label permanen (hint "0" hilang saat mengetik -> WCAG 3.3.2).
-                        labelText: 'Atau ketik nominal manual',
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        prefixText: 'Rp  ',
-                        prefixStyle: AppTypography.h3(color: AppColors.primary),
-                        hintText: '0',
-                        errorText: nominalError,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Metode Posko
+                  // ── Banner jadwal tutup ──────────────────────────────────
+                  if (jadwalTutup) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.account_balance_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
+                          const Icon(
+                            Icons.event_busy_rounded,
+                            color: AppColors.error,
+                            size: 20,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Metode Pencairan',
-                                  style: AppTypography.caption(),
-                                ),
-                                Text(
-                                  'Ambil ke Posko Plamo Garden',
-                                  style: AppTypography.bodyMedium(
-                                    color: AppColors.textPrimary,
-                                  ).copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ],
+                            child: Text(
+                              'Jadwal pencairan sedang tutup. Pantau pengumuman posko untuk jadwal berikutnya.',
+                              style: AppTypography.caption(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
+                  ],
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                  // Saldo card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.wallet_outlined,
+                                  color: _onGreen(),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Saldo tersedia',
+                                  style: AppTypography.caption(color: _onGreen()),
+                                ),
+                              ],
+                            ),
+                            if (kurang > 0)
+                              Text(
+                                'Kurang ${_rupiah(kurang)}',
+                                style: AppTypography.caption(color: Colors.white),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _isLoadingDashboard
+                            ? Container(
+                                height: 32,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               )
-                            : Icon(
-                                kurang > 0
-                                    ? Icons.lock_outline_rounded
-                                    : Icons.check_rounded,
-                                size: 20,
+                            : Text(
+                                _rupiah(_saldo),
+                                style: AppTypography.h1(color: Colors.white),
                               ),
-                        label: Text(
-                          isSubmitting
-                              ? 'Mengirim Pengajuan…'
-                              : 'Ajukan Pencairan (${_rupiah(selectedNominal)})',
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '$persen% menuju minimum',
+                              style: AppTypography.caption(color: _onGreen()),
+                            ),
+                            Text(
+                              'Min. ${_rupiah(_minPencairan)}',
+                              style: AppTypography.caption(color: _onGreen()),
+                            ),
+                          ],
                         ),
-                        onPressed: canSubmit
-                            ? () async {
-                                setMState(() => isSubmitting = true);
-                                HapticFeedback.mediumImpact();
-
-                                final res = await _authService
-                                    .ajukanPencairanWarga(
-                                      nominal: selectedNominal.toDouble(),
-                                    );
-
-                                if (!ctx.mounted) return;
-                                setMState(() => isSubmitting = false);
-                                Navigator.pop(ctx);
-                                if (!mounted) return;
-
-                                if (res['success'] == true) {
-                                  _loadUserData();
-                                  _showSuksesPencairanDialog(selectedNominal);
-                                } else {
-                                  _snack(
-                                    (res['message'] ?? 'Pengajuan gagal.')
-                                        .toString(),
-                                    background: AppColors.error,
-                                  );
-                                }
-                              }
-                            : null,
-                      ),
-                    ),
-
-                    if (kurang > 0) ...[
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Tombol aktif setelah saldo mencapai ${_rupiah(_minPencairan)}',
-                          style: AppTypography.caption(),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showSuksesPencairanDialog(int nominal) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dCtx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.primary,
-                  size: 44,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Pengajuan Berhasil!',
-                style: AppTypography.h2(),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Permintaan pencairan dana tunai sebesar:',
-                style: AppTypography.bodyMedium(),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _rupiah(nominal),
-                style: AppTypography.h1(color: AppColors.primary),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Status Klaim:', style: AppTypography.caption()),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            // 10% (bukan 15%) agar warningDark ≥ 4.5:1.
-                            color: _warningTint(),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Menunggu Validasi',
-                            // Sebelumnya TextStyle mentah 11sp di luar token tipografi.
-                            style: AppTypography.caption(
-                              color: AppColors.warningDark,
-                            ).copyWith(fontWeight: FontWeight.w700),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _progress,
+                            backgroundColor: _onGreen(0.2),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              _progressFill,
+                            ),
+                            minHeight: 6,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Silakan temui Pengurus RT/RW di Posko Bank Sampah untuk pengambilan dana tunai setelah diverifikasi.',
-                      // Instruksi tindak lanjut -> 14sp, bukan caption 12sp.
-                      style: AppTypography.bodyMedium(
-                        color: AppColors.textSecondary,
-                      ).copyWith(height: 1.5),
-                      textAlign: TextAlign.center,
+                  ),
+
+                  // ── Batas maksimal per warga ─────────────────────────────
+                  if (_maksimalPerWarga > 0) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Maks. pencairan: ${_rupiah(_maksimalPerWarga)} per warga',
+                            style: AppTypography.caption(
+                              color: AppColors.primary,
+                            ).copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                ),
+
+                  if (saldomKurang) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.warningDark,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Saldo belum cukup. Kumpulkan ${_rupiah(kurang)} lagi untuk mengajukan pencairan.',
+                              style: AppTypography.caption(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+                  Text('Pilihan Cepat Nominal', style: AppTypography.formLabel()),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      for (final v in const [50000, 100000, 150000]) ...[
+                        _buildQuickChip(_rupiah(v)),
+                        if (v != 150000) const SizedBox(width: 8),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Metode
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_rounded,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Metode Pencairan',
+                                style: AppTypography.caption(),
+                              ),
+                              Text(
+                                'Ambil ke Posko Plamo Garden',
+                                style: AppTypography.bodyMedium(
+                                  color: AppColors.textPrimary,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── CTA Ajukan ───────────────────────────────────────────
+                  ElevatedButton.icon(
+                    icon: _isSubmittingPencairan
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            jadwalTutup
+                                ? Icons.event_busy_rounded
+                                : kurang > 0
+                                ? Icons.lock_outline_rounded
+                                : Icons.check_rounded,
+                            size: 18,
+                          ),
+                    label: Text(
+                      _isSubmittingPencairan
+                          ? 'Mengajukan...'
+                          : 'Ajukan Pencairan',
+                    ),
+                    onPressed: (kurang > 0 || jadwalTutup || _isSubmittingPencairan)
+                        ? null
+                        : () async {
+                            setModalState(
+                              () => _isSubmittingPencairan = true,
+                            );
+                            final result = await _authService.ajukanPencairan(
+                              nominal: _saldo.toDouble(),
+                            );
+                            setModalState(
+                              () => _isSubmittingPencairan = false,
+                            );
+                            if (!ctx2.mounted) return;
+                            Navigator.pop(ctx2);
+                            final success = result['success'] == true;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'] ??
+                                      (success
+                                          ? 'Pengajuan pencairan berhasil dikirim!'
+                                          : 'Gagal mengajukan pencairan.'),
+                                ),
+                                backgroundColor: success
+                                    ? AppColors.primary
+                                    : AppColors.error,
+                              ),
+                            );
+                            if (success) _loadDashboardData();
+                          },
+                  ),
+                  if (kurang > 0 || jadwalTutup) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        jadwalTutup
+                            ? 'Pencairan tidak tersedia saat jadwal tutup'
+                            : 'Tombol aktif setelah saldo mencapai ${_rupiah(_minPencairan)}',
+                        style: AppTypography.caption(),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
         ),
         actions: [

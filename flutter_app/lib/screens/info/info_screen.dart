@@ -28,7 +28,7 @@ class _InfoScreenState extends State<InfoScreen> {
   String _activeCategory = 'Semua';
   String _searchQuery = '';
 
-  final List<String> _categories = ['Semua', 'Agenda', 'Pengumuman', 'Edukasi'];
+  final List<String> _categories = ['Semua', 'Agenda', 'Pengumuman', 'Edukasi', 'Aturan Kas'];
 
   @override
   void initState() {
@@ -104,6 +104,7 @@ class _InfoScreenState extends State<InfoScreen> {
   void _buatPengumumanModal() {
     final judulCtrl = TextEditingController();
     final isiCtrl = TextEditingController();
+    String selectedKategori = 'Agenda';
     bool isSending = false;
 
     showModalBottomSheet(
@@ -111,128 +112,323 @@ class _InfoScreenState extends State<InfoScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setMState) => Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
+        builder: (ctx, setMState) {
+          void applyTemplate(String cat, String title, String content) {
+            HapticFeedback.selectionClick();
+            setMState(() {
+              selectedKategori = cat;
+              judulCtrl.text = title;
+              isiCtrl.text = content;
+            });
+          }
+
+          return Container(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 14,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.canvasWarm,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.campaign_rounded,
-                      color: AppColors.primary,
-                      size: 22,
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Text('Buat Pengumuman Baru', style: AppTypography.h3()),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.mintWash,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.accentLight.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.campaign_rounded,
+                          color: AppColors.accentGreen,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Terbitkan Pengumuman Posko',
+                              style: AppTypography.h3(color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Agenda, aturan jadwal, atau edukasi daur ulang',
+                              style: AppTypography.caption(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(50),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(50),
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.borderLight),
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Kategori Pills Starbucks Full-Pill
+                  Text(
+                    'Pilih Kategori:',
+                    style: AppTypography.caption(color: AppColors.textPrimary)
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['Agenda', 'Pengumuman', 'Edukasi', 'Aturan Kas'].map((cat) {
+                        final isSel = selectedKategori == cat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(50),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setMState(() => selectedKategori = cat);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isSel ? AppColors.accentGreen : Colors.white,
+                                borderRadius: BorderRadius.circular(50),
+                                border: Border.all(
+                                  color: isSel ? AppColors.accentGreen : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Text(
+                                cat,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSel ? Colors.white : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Template Pintar Sekali Sentuh
+                  Text(
+                    'Template Pintar Sekali Sentuh:',
+                    style: AppTypography.caption(color: AppColors.textPrimary)
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _quickTemplatePill(
+                        icon: Icons.event_available_rounded,
+                        label: 'Jadwal Penimbangan',
+                        onTap: () => applyTemplate(
+                          'Agenda',
+                          'Jadwal Penimbangan Sampah Rutin Hari Minggu',
+                          'Diberitahukan kepada seluruh warga bank sampah Eco Plamo:\nPenimbangan sampah rutin akan dilaksanakan pada hari Minggu jam 08.00 - 11.00 WIB bertempat di Posko RT.\n\nHarap pilah sampah kering (botol plastik, kardus, kaleng, jelantah) dari rumah dalam keadaan bersih agar proses penimbangan cepat dan tertib.',
+                        ),
+                      ),
+                      _quickTemplatePill(
+                        icon: Icons.savings_outlined,
+                        label: 'Jadwal Kas',
+                        onTap: () => applyTemplate(
+                          'Aturan Kas',
+                          'Jadwal & Aturan Pencairan Saldo Kas Posko',
+                          'Pemberitahuan pencairan kas tabungan sampah posko dibuka untuk periode bulan ini.\n\nKetentuan Pencairan:\n• Warga yang saldonya mencapai batas minimal dapat mengajukan klaim di aplikasi.\n• Terdapat kuota antrean dan batas maksimal pencairan per warga untuk menjaga likuiditas kas.\n• Pengambilan uang tunai dilayani di posko RT pada jam operasional.',
+                        ),
+                      ),
+                      _quickTemplatePill(
+                        icon: Icons.lightbulb_outline_rounded,
+                        label: 'Tips Pemilahan',
+                        onTap: () => applyTemplate(
+                          'Edukasi',
+                          'Tips Pilah Sampah Plastik & Minyak Bernilai Jual Tinggi',
+                          'Bapak/Ibu warga Eco Plamo, botol plastik bening PET dan minyak jelantah memiliki harga beli tertinggi di posko kita!\n\nTips Cepat:\n1. Cuci dan keringkan botol sebelum disetor.\n2. Kumpulkan minyak jelantah dalam jeriken tertutup rapat.\n3. Lipat kardus rata agar mudah ditimbang.',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: judulCtrl,
+                          style: AppTypography.bodyMedium().copyWith(fontWeight: FontWeight.w600),
+                          decoration: InputDecoration(
+                            labelText: 'Judul Informasi / Pengumuman',
+                            hintText: 'Contoh: Jadwal Penimbangan Rutin',
+                            floatingLabelBehavior: FloatingLabelBehavior.always,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: isiCtrl,
+                          maxLines: 5,
+                          style: AppTypography.bodyMedium(),
+                          decoration: InputDecoration(
+                            labelText: 'Isi Informasi Pengumuman',
+                            hintText: 'Tuliskan rincian pengumuman untuk seluruh warga…',
+                            floatingLabelBehavior: FloatingLabelBehavior.always,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Tombol Publikasi Full-Pill Starbucks
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      ),
+                      onPressed: isSending
+                          ? null
+                          : () async {
+                              final j = judulCtrl.text.trim();
+                              final i = isiCtrl.text.trim();
+                              if (j.isEmpty || i.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Judul dan isi pengumuman wajib diisi.'),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                                return;
+                              }
+                              final messenger = ScaffoldMessenger.of(context);
+                              final nav = Navigator.of(ctx);
+                              setMState(() => isSending = true);
+                              final res = await _authService.buatPengumuman(
+                                judul: j,
+                                isi: i,
+                                kategori: selectedKategori,
+                              );
+                              if (!mounted) return;
+                              nav.pop();
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(res['message']?.toString() ?? 'Terkirim.'),
+                                  backgroundColor: res['success'] == true
+                                      ? AppColors.accentGreen
+                                      : AppColors.error,
+                                ),
+                              );
+                              if (res['success'] == true) _fetchPengumuman();
+                            },
+                      child: isSending
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'Terbitkan Pengumuman',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+                            ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: judulCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Judul Informasi / Pengumuman',
-                  hintText: 'Contoh: Jadwal Penimbangan Rutin Hari Minggu',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _quickTemplatePill({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppColors.accentGreen),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: isiCtrl,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: 'Isi Informasi',
-                  hintText: 'Tuliskan rincian pengumuman untuk seluruh warga…',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
-                  onPressed: isSending
-                      ? null
-                      : () async {
-                          final j = judulCtrl.text.trim();
-                          final i = isiCtrl.text.trim();
-                          if (j.isEmpty || i.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Judul dan isi wajib diisi.'),
-                              ),
-                            );
-                            return;
-                          }
-                          final messenger = ScaffoldMessenger.of(context);
-                          final nav = Navigator.of(ctx);
-                          setMState(() => isSending = true);
-                          final res = await _authService.buatPengumuman(
-                            judul: j,
-                            isi: i,
-                          );
-                          if (!mounted) return;
-                          nav.pop();
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                res['message']?.toString() ?? 'Terkirim.',
-                              ),
-                              backgroundColor: res['success'] == true
-                                  ? AppColors.primary
-                                  : AppColors.error,
-                            ),
-                          );
-                          if (res['success'] == true) _fetchPengumuman();
-                        },
-                  child: isSending
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Terbitkan Pengumuman'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -667,6 +863,12 @@ class _InfoScreenState extends State<InfoScreen> {
         badgeBg = const Color(0xFFECFDF5);
         badgeColor = const Color(0xFF047857);
         icon = Icons.school_outlined;
+        break;
+      case 'Aturan Kas':
+      case 'Aturan':
+        badgeBg = const Color(0xFFFEF3C7);
+        badgeColor = const Color(0xFFB45309);
+        icon = Icons.rule_rounded;
         break;
       default:
         badgeBg = AppColors.primaryLight;
